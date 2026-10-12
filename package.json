@@ -1,0 +1,39 @@
+{
+  "name": "research-bench",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.28.5",
+  "imports": { "#lib/*": "./src/lib/*" },
+  "engines": { "node": ">=22.17" },
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "assets:prepare": "node scripts/prepare-assets.mjs",
+    "wasm:build": "node scripts/build-wasm.mjs",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "pnpm check && pnpm test && cargo test --manifest-path crates/research-core/Cargo.toml && pnpm build"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.3.1",
+    "idb": "8.0.4",
+    "lucide-svelte": "1.0.1",
+    "svelte": "5.57.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@sveltejs/adapter-static": "4.0.0",
+    "@sveltejs/kit": "3.0.1",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@types/node": "26.6.5",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.3",
+    "fake-indexeddb": "6.2.5"
+  }
+}

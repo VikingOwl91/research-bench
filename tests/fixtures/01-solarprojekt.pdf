@@ -1,0 +1,66 @@
+%PDF-1.4
+% Original ResearchBench CC0 fixture
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 347 >>
+stream
+BT
+/F1 12 Tf
+50 780 Td
+(Solarprojekt Lindenhof) Tj
+0 -22 Td
+(Originales Testdokument, keine echten Personendaten.) Tj
+0 -22 Td
+(Das Projekt Lindenhof nutzt Solarmodule auf dem Schuldach.) Tj
+0 -22 Td
+(Die Anlage produziert 42000 Kilowattstunden Strom pro Jahr.) Tj
+0 -22 Td
+(Der Batteriespeicher hat eine Kapazitaet von 18 Kilowattstunden.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 268 >>
+stream
+BT
+/F1 12 Tf
+50 780 Td
+(Zeitplan und Finanzierung) Tj
+0 -22 Td
+(Der geplante Betriebsbeginn ist der 15. Mai 2027.) Tj
+0 -22 Td
+(Die Gemeinde investiert 68000 Euro in das Projekt.) Tj
+0 -22 Td
+(Technische Ansprechpartnerin ist die fiktive Ingenieurin Mara Fink.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000046 00000 n 
+0000000095 00000 n 
+0000000158 00000 n 
+0000000228 00000 n 
+0000000625 00000 n 
+0000000751 00000 n 
+0000001069 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1195
+%%EOF

@@ -1,0 +1,16 @@
+node_modules/
+.svelte-kit/
+build/
+target/
+.cache/
+.pnpm-store/
+test-results/
+playwright-report/
+static/models/
+static/runtime/
+static/pdfium/
+src/lib/wasm/
+.env*
+!.env.example
+core
+graphify-out/

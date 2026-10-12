@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "embedding": {
+    "id": "Xenova/multilingual-e5-small",
+    "revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+    "license": "MIT (intfloat/multilingual-e5-small)",
+    "licenseUrl": "https://huggingface.co/intfloat/multilingual-e5-small/blob/main/README.md",
+    "files": [
+      {
+        "path": "static/models/multilingual-e5-small/config.json",
+        "url": "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/config.json",
+        "sha256": "cb99455288675345e1a4f411438d5d0adbba5fbd3a67ea4fb03c015433b996c1",
+        "bytes": 658
+      },
+      {
+        "path": "static/models/multilingual-e5-small/tokenizer.json",
+        "url": "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/tokenizer.json",
+        "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+        "bytes": 17082730
+      },
+      {
+        "path": "static/models/multilingual-e5-small/tokenizer_config.json",
+        "url": "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/tokenizer_config.json",
+        "sha256": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b",
+        "bytes": 443
+      },
+      {
+        "path": "static/models/multilingual-e5-small/special_tokens_map.json",
+        "url": "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/special_tokens_map.json",
+        "sha256": "d05497f1da52c5e09554c0cd874037a083e1dc1b9cfd48034d1c717f1afc07a7",
+        "bytes": 167
+      },
+      {
+        "path": "static/models/multilingual-e5-small/onnx/model_quantized.onnx",
+        "url": "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/onnx/model_quantized.onnx",
+        "sha256": "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193",
+        "bytes": 118308185
+      }
+    ],
+    "licenseSourceRevision": "31c5b904ca1bf2afb4c234a6675c683a4e5fc7cd"
+  },
+  "pdfium": {
+    "release": "8046d",
+    "url": "https://github.com/paulocoutinhox/pdfium-lib/releases/download/8046d/wasm.zip",
+    "sha256": "062d10055de90a01120acf307ce16e0022021a32203f4aeae4877750f9a08427",
+    "license": "BSD-3-Clause; bundled third-party licenses apply",
+    "licenseUrl": "https://pdfium.googlesource.com/pdfium/+/refs/heads/chromium/8046/LICENSE",
+    "files": [
+      {
+        "member": "release/node/pdfium.esm.js",
+        "path": "static/pdfium/pdfium.js",
+        "sha256": "cf4b618b7214dc583e6795fb734f3f95912eac4207a4edddc87f6dfe8c35c2ab",
+        "bytes": 256055
+      },
+      {
+        "member": "release/node/pdfium.esm.wasm",
+        "path": "static/pdfium/pdfium.wasm",
+        "sha256": "beeaf5bbff216d555fecec7cd486072838c4632a2272d31b52ef1fd05008fe7c",
+        "bytes": 5298237
+      }
+    ],
+    "sourceRevision": "f91ca5a72358bb0b00b4da9481b21fe668157614"
+  },
+  "runtime": {
+    "package": "onnxruntime-web",
+    "version": "1.31.0-dev.20260914-8d85527a0",
+    "license": "MIT",
+    "licenseUrl": "https://github.com/microsoft/onnxruntime/blob/main/LICENSE",
+    "files": [
+      {
+        "name": "ort-wasm-simd-threaded.asyncify.mjs",
+        "path": "static/runtime/ort-wasm-simd-threaded.asyncify.mjs",
+        "sha256": "0966b6105cd936744498aa60df7a22cbd47af3374dbc64a9ab561c08a71e3611",
+        "bytes": 53057
+      },
+      {
+        "name": "ort-wasm-simd-threaded.asyncify.wasm",
+        "path": "static/runtime/ort-wasm-simd-threaded.asyncify.wasm",
+        "sha256": "49871f5a4409519797e127440868a6d1923339d9185907f301a5b2a1d90af082",
+        "bytes": 26861777
+      },
+      {
+        "name": "ort-wasm-simd-threaded.jsep.mjs",
+        "path": "static/runtime/ort-wasm-simd-threaded.jsep.mjs",
+        "sha256": "c2f80e915e9df63289788a99d434d8c4e00e64e9c1f030f4b80b022458dd2c99",
+        "bytes": 46851
+      },
+      {
+        "name": "ort-wasm-simd-threaded.jsep.wasm",
+        "path": "static/runtime/ort-wasm-simd-threaded.jsep.wasm",
+        "sha256": "62ff86b2f2fa3a79eb87a7e4720e8ea9051942bf975f314181bf7dcef2feac06",
+        "bytes": 28352885
+      },
+      {
+        "name": "ort-wasm-simd-threaded.jspi.mjs",
+        "path": "static/runtime/ort-wasm-simd-threaded.jspi.mjs",
+        "sha256": "6b37a3974dbd96a752fdc1805e1bdc2dca3ead7e380703c092240c2352c71dbf",
+        "bytes": 50918
+      },
+      {
+        "name": "ort-wasm-simd-threaded.jspi.wasm",
+        "path": "static/runtime/ort-wasm-simd-threaded.jspi.wasm",
+        "sha256": "173146c55eb8c7e01f8be3f7b7376fbde14118d91607583ab7caf4feac98e59c",
+        "bytes": 16811691
+      },
+      {
+        "name": "ort-wasm-simd-threaded.mjs",
+        "path": "static/runtime/ort-wasm-simd-threaded.mjs",
+        "sha256": "c57ca56328877353a575e51bbca6f18450027d6c9bf2307a2cb2c41363b4de9f",
+        "bytes": 24381
+      },
+      {
+        "name": "ort-wasm-simd-threaded.wasm",
+        "path": "static/runtime/ort-wasm-simd-threaded.wasm",
+        "sha256": "06ba057753da3847e4c24f02d91ab133455b0817c69a44993a9a53a2146df9e3",
+        "bytes": 14264838
+      }
+    ],
+    "sourceRevision": "8d85527a010e294a26b274749f74294b2a32cec5"
+  },
+  "notices": [
+    {
+      "path": "static/models/multilingual-e5-small/README.md",
+      "url": "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/README.md",
+      "sha256": "561a19594636657fe033f8b4427a7743b5f6f3a12f16cecc5f286feca0453245",
+      "bytes": 1077
+    },
+    {
+      "path": "static/models/multilingual-e5-small/LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/microsoft/unilm/31c5b904ca1bf2afb4c234a6675c683a4e5fc7cd/LICENSE",
+      "sha256": "904dc4d8749877f1dba1cda48200d2462dccbeb7c134d5e4ef6fa75e0198c8fe",
+      "bytes": 1104
+    },
+    {
+      "path": "static/pdfium/LICENSE.txt",
+      "url": "https://pdfium.googlesource.com/pdfium/+/f91ca5a72358bb0b00b4da9481b21fe668157614/LICENSE?format=TEXT",
+      "sha256": "1fe9dea718fbd75cf149adaf4d8a22a4335604d964ddb76d1b45383dec8668c9",
+      "bytes": 12896,
+      "downloadEncoding": "base64"
+    },
+    {
+      "path": "static/pdfium/pdfium-lib-LICENSE.md",
+      "url": "https://raw.githubusercontent.com/paulocoutinhox/pdfium-lib/f2bed3c8bd49569a6b5c2a0df3a1ae0def3d8871/LICENSE.md",
+      "sha256": "f76cf515028a29998219ef69368c12c29ac0507df55475408e590e32f7627a5d",
+      "bytes": 1076
+    },
+    {
+      "path": "static/runtime/LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/8d85527a010e294a26b274749f74294b2a32cec5/LICENSE",
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "bytes": 1073
+    },
+    {
+      "path": "static/runtime/ThirdPartyNotices.txt",
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/8d85527a010e294a26b274749f74294b2a32cec5/ThirdPartyNotices.txt",
+      "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3",
+      "bytes": 338088
+    }
+  ]
+}

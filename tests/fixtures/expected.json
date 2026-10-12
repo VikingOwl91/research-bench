@@ -1,0 +1,20 @@
+[
+  {
+    "file": "01-solarprojekt.pdf",
+    "question": "Wie viel Strom produziert das Solarprojekt pro Jahr?",
+    "expected": "42000",
+    "page": 1
+  },
+  {
+    "file": "02-wasserlabor.pdf",
+    "question": "Wie hoch ist der Nitratwert der Probe vom 3. Juni?",
+    "expected": "17 Milligramm",
+    "page": 1
+  },
+  {
+    "file": "03-forest-study.pdf",
+    "question": "How many oak seedlings survived the first winter?",
+    "expected": "216",
+    "page": 1
+  }
+]
