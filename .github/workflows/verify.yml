@@ -25,7 +25,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: crates/research-core
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: browser-assets
         with:
           path: |
             static/models
@@ -37,8 +38,30 @@ jobs:
       - run: node scripts/prepare-assets.mjs
       - run: node scripts/prepare-assets.mjs --verify
       - run: node scripts/build-wasm.mjs
+      - uses: actions/cache/save@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.browser-assets.outputs.cache-hit != 'true'
+        with:
+          path: |
+            static/models
+            static/pdfium
+            static/runtime
+            .cache/tools
+          key: ${{ steps.browser-assets.outputs.cache-primary-key }}
       - run: pnpm verify
       - run: pnpm exec playwright install --with-deps chromium firefox
+      - name: Provide isolated audio output for native playback tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends pulseaudio pulseaudio-utils
+          export PULSE_RUNTIME_PATH="$RUNNER_TEMP/researchbench-pulse"
+          install -d -m 700 "$PULSE_RUNTIME_PATH"
+          export PULSE_SERVER="unix:$PULSE_RUNTIME_PATH/native"
+          pulseaudio -n --daemonize=yes --fail=yes --exit-idle-time=-1 --use-pid-file=no \
+            --load="module-native-protocol-unix socket=$PULSE_RUNTIME_PATH/native auth-anonymous=1" \
+            --load="module-null-sink sink_name=researchbench_fixture"
+          pactl --server="$PULSE_SERVER" set-default-sink researchbench_fixture
+          test "$(pactl --server="$PULSE_SERVER" get-default-sink)" = researchbench_fixture
+          printf 'PULSE_SERVER=%s\n' "$PULSE_SERVER" >> "$GITHUB_ENV"
       - run: pnpm test:e2e
       - run: pnpm test:security
       - uses: actions/upload-artifact@v4

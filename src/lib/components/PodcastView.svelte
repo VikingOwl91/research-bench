@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { podcastSeekTarget } from '#lib/audio/timeline.ts';
   import { displaySourceName } from '#lib/display-source-name.ts';
   import { onDestroy } from 'svelte';
   import { Headphones, FileText, Check, Trash2, Volume2, Play } from 'lucide-svelte';
@@ -70,7 +71,8 @@
   }
   function seek(turnId: string) {
     const timing = finished?.timeline?.find((item) => item.turnId === turnId);
-    if (player && timing) { player.currentTime = timing.start; currentTime = timing.start; applyPodcastSpeed(); }
+    const target = timing && podcastSeekTarget(timing);
+    if (player && target !== undefined) { player.currentTime = target; currentTime = player.currentTime; applyPodcastSpeed(); }
   }
   function recommendedRate(audioLanguage: PodcastLanguage, speaker: 'A' | 'B') { return audioLanguage === 'de' ? 1.3 : speaker === 'A' ? 1.2 : 1; }
   function applyPodcastSpeed() {
@@ -109,7 +111,7 @@
     {#if stale}<p class="stale-note">{$t('components.podcast.oldRevision')}</p>{/if}
     {#if finished}
       <div class="podcast-player">
-        {#if audioUrl}<audio bind:this={player} controls src={audioUrl} aria-label={$t('components.podcast.play')} preload="metadata" ontimeupdate={() => { currentTime = player.currentTime; applyPodcastSpeed(); }} onloadedmetadata={applyPodcastSpeed} onseeked={applyPodcastSpeed} onerror={() => audioError = 'components.podcast.error.play'}></audio>{:else if loadingAudio}<p role="status">{$t('components.podcast.loading')}</p>{/if}
+        {#if audioUrl}<audio bind:this={player} controls src={audioUrl} aria-label={$t('components.podcast.play')} preload="metadata" ontimeupdate={() => { currentTime = player.currentTime; applyPodcastSpeed(); }} onloadedmetadata={applyPodcastSpeed} onseeked={() => { currentTime = player.currentTime; applyPodcastSpeed(); }} onerror={() => audioError = 'components.podcast.error.play'}></audio>{:else if loadingAudio}<p role="status">{$t('components.podcast.loading')}</p>{/if}
         <div class="podcast-player-tools"><span>{formatTime(finished.durationSeconds ?? 0)} · MP3</span><label>{$t('components.podcast.speed')}<select aria-label={$t('components.podcast.playbackSpeed')} bind:value={speed} onchange={applyPodcastSpeed}><option value="auto">{$t('components.podcast.recommended')}</option><option value="1">1×</option><option value="1.2">{formatNumber($locale, 1.2)}×</option><option value="1.4">{formatNumber($locale, 1.4)}×</option><option value="1.5">{formatNumber($locale, 1.5)}×</option><option value="2">2×</option></select></label></div>
         {#if audioUrl}<a class="button secondary small-button full-width" href={audioUrl} download={`researchbench-podcast-${language}.mp3`}>{$t('components.podcast.download')}</a><p class="podcast-tempo-note">{$t('components.podcast.downloadSpeed')}</p>{/if}
         {#if audioError}<p class="stale-note" role="alert">{$t(audioError)}</p>{/if}

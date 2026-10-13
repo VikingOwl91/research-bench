@@ -20,7 +20,9 @@ pnpm test:security
 and the static production build. Browser tests use fresh, isolated Chromium and
 Firefox profiles. They do not access an existing user tab or its API keys.
 Provider endpoints are intercepted with original synthetic fixtures and dummy
-keys; no real provider requests or spending are needed.
+keys; no real provider requests or spending are needed. CI provisions an
+isolated UNIX-socket audio null sink for native playback; it does not replace
+audio decoding, clock progression or player error assertions.
 
 ## Covered behavior
 
@@ -32,6 +34,8 @@ keys; no real provider requests or spending are needed.
   during operations, unchanged stored source names and audio playback.
 - Podcast scripting, WAV/PCM/MP3 decoding, resampling, gain, the production MP3
   encoder Worker, playback/seek/download and contribution-level timestamps.
+  Paused seeks are checked at fractional MP3 boundaries for both speakers;
+  a one-sample offset avoids browser clock rounding without changing pauses.
 - Atomic audio/metadata publication, quota rollback, stale render identities,
   key removal/replacement and provider changes during generation, resume and
   multi-tab locking, including release when the owning tab closes.
