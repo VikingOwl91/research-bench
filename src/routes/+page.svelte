@@ -1,4 +1,9 @@
+<script context="module" lang="ts">
+  declare const __SOURCE_COMMIT__: string;
+</script>
 <script lang="ts">
+  const sourceArchive = `/source/researchbench-${__SOURCE_COMMIT__}.tar.gz`;
+  const sourceLicense = `/source/researchbench-${__SOURCE_COMMIT__}.license.txt`;
   import { displaySourceName } from '#lib/display-source-name.ts';
   import { onMount, tick } from 'svelte';
   import { BookOpen, Plus, ChevronDown, ArrowUp, ArrowRight, MessageSquare, Search, FileText, Upload, X, Settings2, ShieldCheck, Sparkles, GraduationCap, PanelLeft, Trash2, Pencil, Check, LoaderCircle, CircleHelp, CheckCircle2, AlertCircle, Square, NotebookPen, Headphones } from 'lucide-svelte';
@@ -167,7 +172,7 @@
       <div class="studio-tip"><span class="tip-icon"><NotebookPen size={17}/></span><div><strong>{$t('page.studioTipTitle')}</strong><p>{$t('page.studioTip')}</p></div></div>
     </aside>
   </main>
-  <footer class="app-footer"><span>{$t('page.footerTagline')}</span><span>{$t('page.localProcessing')}<span>·</span> Rust + WebAssembly <span>·</span> BYOK <span>·</span> <a class="repo-link" href="https://github.com/VikingOwl91/research-bench" target="_blank" rel="noopener noreferrer">GitHub</a></span></footer>
+  <footer class="app-footer"><span>{$t('page.footerTagline')}</span><span>{$t('page.localProcessing')}<span>·</span> Rust + WebAssembly <span>·</span> BYOK <span>·</span> <a class="repo-link" href="https://github.com/VikingOwl91/research-bench" target="_blank" rel="noopener noreferrer">GitHub</a> <span>·</span> <a class="repo-link" href={sourceArchive}>{$locale === 'de' ? 'Quellcode' : 'Source code'}</a> <span>·</span> <a class="repo-link" href={sourceLicense}>AGPL-3.0-or-later</a></span></footer>
 </div>
 
 <dialog class="settings-dialog" bind:this={settingsDialog} onclose={() => keyInput = ''}>

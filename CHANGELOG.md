@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.3 — 2026-10-13
+
+- AGPL-3.0-or-later for new application code; historical MIT releases remain unchanged.
+- Commit-bound source downloads and license offers on the live demo.
+- Public NIST demo sources and a prepared OBS/YouTube demonstration outline.
+- Native browser acceptance for storage, offline and provider failure states.
+
 ## 0.0.2 — 2026-10-13
 
 Cited podcasts, English-first localization and hardened static releases.

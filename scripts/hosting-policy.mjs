@@ -28,14 +28,18 @@ export function isWorkerPath(path) {
   return /^\/?_app\/immutable\/workers\/(?:pipeline|encoder)\.worker-[A-Za-z0-9_-]+\.js$/.test(path);
 }
 export function isImmutablePath(path) {
-  return /^\/?(?:_app\/immutable\/|models\/[a-f0-9]{64}\/)/.test(path);
+  return /^\/?(?:_app\/immutable\/|models\/[a-f0-9]{64}\/)/.test(path) || isSourceOfferPath(path);
+}
+export function isSourceOfferPath(path) {
+  return /^\/?source\/researchbench-[a-f0-9]{40}\.(?:tar\.gz|license\.txt)$/.test(path);
 }
 export function headersForPath(path) {
   return {
     'Content-Security-Policy': isWorkerPath(path) ? WORKER_CSP : DOCUMENT_HEADER_CSP,
     'X-Frame-Options': 'DENY', 'Strict-Transport-Security': 'max-age=31536000',
     'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
-    'Cache-Control': isImmutablePath(path) ? 'public, max-age=31536000, immutable' : 'no-cache'
+    'Cache-Control': isImmutablePath(path) ? 'public, max-age=31536000, immutable' : 'no-cache',
+    ...(isSourceOfferPath(path) && path.endsWith('.tar.gz') ? { 'Content-Disposition': `attachment; filename="${path.split('/').at(-1)}"` } : {})
   };
 }
 /** @param {string | URL} [path] */

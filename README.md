@@ -1,6 +1,6 @@
-# ResearchBench · v0.0.2
+# ResearchBench · v0.0.3
 
-**Deine Quellen. Dein Wissen. Dein Browser.**
+**Your sources. Your knowledge. Your browser.**
 
 **Live demo:** [research-bench.nachtigall.dev](https://research-bench.nachtigall.dev/)
 
@@ -267,9 +267,14 @@ keys created by the setup scripts.
 2. **External generation:** selected excerpts, questions/generation instructions,
    bounded conversation history and the chosen API's authorization key leave the
    browser when the user starts generation. The selected API connection is visible.
+   For small notebooks, this selection can include the complete canonical source
+   text; complete coverage is not a promise that only a few snippets leave the browser.
    For podcasts, the grounded script's spoken contributions are additionally sent
    to that connection's speech API. Scripts, downloaded segments and finished MP3s
-   persist locally. The voice probe sends fictional test text only.
+   persist locally. The voice probe sends fictional test text only. Mistral voice
+   discovery makes an authenticated request to its EU voices endpoint; OpenRouter
+   model discovery uses its public, unauthenticated catalog. Keys travel only in
+   authorization headers, separate from the prompt or speech body.
 3. **Mistral:** ResearchBench targets the EU regional inference endpoint. This is
    a processing-location choice, not a universal GDPR compliance assertion.
    Mistral documents EU/EFTA infrastructure and control-plane metadata that may
@@ -347,8 +352,12 @@ The reproducible checks, release gates and coverage limits are in
 
 ## Static deployment and submission
 
+Build from a clean committed checkout so the application and its source offer
+share the exact Git commit identity.
+
 ```sh
 pnpm build
+pnpm source:prepare --expected-head "$(git rev-parse HEAD)"
 pnpm preview
 ```
 
@@ -396,9 +405,49 @@ For public-origin checks, use `pnpm hosting:check --url <https-origin> --release
 and set `RESEARCHBENCH_HOSTING_URL` to that origin before running
 `pnpm test:hosting`. API calls in the hosting browser suite are mocked.
 
-Before submission: test the deployed hostname, demo import speed and a funded
-key; record Loom in at most ten minutes using [the demo outline](docs/loom-script.md).
-The repo URL, live URL and video link are then included in the application reply.
-Publishing and sending remain explicit human actions.
+Before submission, verify the exact production build on the live domain while
+the GitHub repository is still private. Complete real-key Mistral acceptance and
+check generated claims against the imported sources. Then the owner makes the
+repository public. Record a 6–8 minute English demo with OBS Studio and publish
+it as an unlisted YouTube video (hard limit: ten minutes), using
+[the recording script and acceptance checklist](docs/demo-script.md) and
+[the public NIST source corpus](docs/public-demo/README.md). Loom is not required.
+Prepare and verify chat, Summary, FAQ, Study Guide and podcast before recording;
+one optional live chat may be cancelled after 15 seconds or an error, with a
+clearly identified prepared answer as fallback. No recording-time API retries.
+The repo, live demo and video links go into the application reply. Recording,
+GitHub visibility, video upload and sending remain owner actions.
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for redistribution notices.
+
+## License and corresponding source
+
+Copyright (c) 2026 Christian Nachtigall and ResearchBench contributors.
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+ResearchBench's own application code and documentation are free software: you
+can redistribute them and/or modify them under the GNU Affero General Public
+License as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version. They are distributed without
+any warranty, including merchantability or fitness for a particular purpose.
+See [LICENSE](LICENSE) for the complete terms. This declaration applies only to
+code and documentation for which the project holds the necessary rights.
+
+Existing MIT releases, including `v0.0.1` and `v0.0.2`, retain their MIT terms;
+the license change does not rewrite history or revoke those permissions.
+Third-party packages, runtime/model assets, the public NIST demo inputs and
+CC0 test fixtures keep their own terms. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+The deployed footer offers an anonymous same-origin **Source** archive and
+**License** for the build's actual commit, even while GitHub is private.
+`pnpm source:prepare --expected-head <full-commit-SHA>` creates the archive from the clean committed tree; it
+contains `project/` and separate provenance/rebuild instructions, without Git
+history, generated binaries, dependency directories or user data. The archive
+contains the application source and pinned build/asset instructions; upstream
+packages remain available from their pinned sources, and the LGPL encoder's
+matching source is also served separately. Rebuilding an extracted archive
+starts a new local Git history and receives a new build identity. It does not
+fake the original commit or promise identical binary hashes. Retain published
+source archives and license files across later activation and rollback so old
+open tabs continue to offer their matching source.

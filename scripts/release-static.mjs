@@ -8,11 +8,19 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 import { physicalAssetPath, modelBasePath } from './model-assets.mjs';
+import { verifySourceOffer } from './source-offer.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const serialize = value => `${JSON.stringify(value, null, 2)}\n`;
 const compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+// Earlier MIT releases remain valid rollback candidates without an AGPL offer.
+const requiresSourceOffer = version => {
+  const core = version.match(/^(\d+)\.(\d+)\.(\d+)(?:[-+]|$)/);
+  if (!core) throw new Error('Invalid release version');
+  const [major, minor, patch] = core.slice(1).map(Number);
+  return major > 0 || minor > 0 || patch >= 3;
+};
 
 export function safeRelativePath(path) {
   if (typeof path !== 'string' || !/^[A-Za-z0-9_.\/-]+$/.test(path) ||
@@ -155,6 +163,7 @@ export async function verifyRelease(releaseDir, options = {}) {
   if (options.requireClean) {
     if (typeof metadata.buildVersion !== 'string' || !metadata.buildVersion.endsWith(`+${options.expectedHead}`) || metadata.buildVersion === `+${options.expectedHead}`) throw new Error('Release metadata build version does not match provenance HEAD');
     await compiledBuildIdentity(join(releaseDir, 'site'), metadata.buildVersion);
+    if (requiresSourceOffer(metadata.buildVersion)) await verifySourceOffer({ buildDir: join(releaseDir, 'site'), expectedHead: options.expectedHead });
   }
   if (metadata.artifactId !== artifactId) throw new Error('Release metadata artifact ID mismatch');
   const actual = await createManifest(join(releaseDir, 'site'));
@@ -178,6 +187,7 @@ export async function prepareRelease({ buildDir = join(root, 'build'), outputRoo
     if (typeof sourcePackage.version !== 'string' || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(sourcePackage.version)) throw new Error('Invalid committed package version');
     buildVersion = `${sourcePackage.version}+${expectedHead}`;
     await compiledBuildIdentity(buildDir, buildVersion);
+    if (requiresSourceOffer(buildVersion)) await verifySourceOffer({ buildDir, expectedHead, repoRoot });
   }
   if (outputRoot === buildDir || outputRoot.startsWith(`${buildDir}/`)) throw new Error('Release output must be outside build directory');
   const manifest = await createManifest(buildDir);

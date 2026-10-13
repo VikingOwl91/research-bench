@@ -84,6 +84,8 @@ describe('CSP artifact and hosting boundaries', () => {
     expect(isImmutablePath(`/models/${'a'.repeat(64)}/multilingual-e5-small/model.onnx`)).toBe(true);
     expect(isImmutablePath('/models/multilingual-e5-small/model.onnx')).toBe(false);
     expect(headersForPath('/runtime/ort.mjs')['Cache-Control']).toBe('no-cache');
+    for (const suffix of ['tar.gz', 'license.txt']) expect(isImmutablePath(`/source/researchbench-${'a'.repeat(40)}.${suffix}`)).toBe(true);
+    for (const path of ['/source/anything.tar.gz', `/source/researchbench-${'a'.repeat(39)}.tar.gz`, `/source/researchbench-${'a'.repeat(40)}.tar.gz/extra`]) expect(isImmutablePath(path)).toBe(false);
   });
   it('requires HTTPS HSTS, frame defenses and prevents early HTTP preloads', () => {
     const headers = new Headers(headersForPath('/'));

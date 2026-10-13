@@ -4,7 +4,7 @@
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve, join } from 'node:path';
-import { isImmutablePath, validateSecurityHeaders, validateDocumentPolicy } from './hosting-policy.mjs';
+import { isImmutablePath, isSourceOfferPath, validateSecurityHeaders, validateDocumentPolicy } from './hosting-policy.mjs';
 
 const args = process.argv.slice(2);
 let url, releasePath, localRehearsal = false;
@@ -48,7 +48,14 @@ function documentPolicy(response, html, path) {
 }
 function mimePolicy(response, path) {
   const type = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
-  if (path.endsWith('.wasm')) check(type === 'application/wasm', `${path}: WASM MIME`);
+  if (isSourceOfferPath(path)) {
+    check(type === (path.endsWith('.tar.gz') ? 'application/gzip' : 'text/plain'), `${path}: source offer MIME`);
+    if (path.endsWith('.tar.gz')) {
+      check(response.headers.get('content-disposition') === `attachment; filename="${path.split('/').at(-1)}"`, `${path}: source archive attachment`);
+      check(!response.headers.get('content-encoding'), `${path}: source archive must not be HTTP-compressed`);
+    }
+  }
+  else if (path.endsWith('.wasm')) check(type === 'application/wasm', `${path}: WASM MIME`);
   else if (/\.(?:js|mjs)$/.test(path)) check(['text/javascript', 'application/javascript'].includes(type), `${path}: JavaScript MIME`);
   else if (path.endsWith('.json')) check(type === 'application/json', `${path}: JSON MIME`);
   else if (path.endsWith('.html')) check(type === 'text/html', `${path}: HTML MIME`);
@@ -95,7 +102,7 @@ for (const path of ['/', '/?hosting-check=1', '/__researchbench_navigation_probe
   documentPolicy(response, actual.html, path);
   check(actual.sha256 === index.sha256, `${path}: navigation does not return release index`);
 }
-for (const path of ['/_app/immutable/missing-hosting-probe.js', '/pdfium/missing-hosting-probe.wasm', '/models/missing-hosting-probe.json', '/runtime/missing-hosting-probe.mjs', '/notices/missing-hosting-probe.txt', '/missing-hosting-probe.js']) {
+for (const path of ['/_app/immutable/missing-hosting-probe.js', '/pdfium/missing-hosting-probe.wasm', '/models/missing-hosting-probe.json', '/runtime/missing-hosting-probe.mjs', '/notices/missing-hosting-probe.txt', '/source/missing-hosting-probe', `/source/researchbench-${'0'.repeat(40)}.tar.gz`, '/missing-hosting-probe.js']) {
   const response = await get(path);
   check(response.status === 404, `${path}: missing asset status ${response.status}`);
   check(response.headers.get('content-type')?.split(';')[0] !== 'text/html', `${path}: missing asset has HTML fallback`);

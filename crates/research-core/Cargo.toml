@@ -1,8 +1,8 @@
 [package]
 name = "research-core"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 description = "Local parsing, Unicode chunking and retrieval for ResearchBench"
 
 [lib]

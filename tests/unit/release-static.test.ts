@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createManifest, safeRelativePath, prepareRelease, verifyRelease } from '../../scripts/release-static.mjs';
+import { prepareSourceOffer } from '../../scripts/source-offer.mjs';
 
 let dir: string;
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -31,14 +32,15 @@ function git(...args: string[]) {
   const result = spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
   expect(result.status).toBe(0); return result.stdout.trim();
 }
-async function committedFixture() {
+async function committedFixture(version = '0.0.2') {
   const options = await fixture();
   git('init', '-q'); git('config', 'user.name', 'Release test'); git('config', 'user.email', 'test@example.invalid');
   await writeFile(join(dir, '.gitignore'), 'releases/\nbuild/\n');
-  await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'fixture', version: '0.0.2' }));
+  await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'fixture', version }));
+  await writeFile(join(dir, 'LICENSE'), 'Fixture license\n');
   git('add', '.'); git('commit', '-qm', 'Fixture');
   const expectedHead = git('rev-parse', 'HEAD');
-  await compiledVersion(`0.0.2+${expectedHead}`);
+  await compiledVersion(`${version}+${expectedHead}`);
   return { ...options, requireClean: true, expectedHead };
 }
 async function compiledVersion(version: string, bootstrapVersion = version) {
@@ -49,6 +51,25 @@ beforeEach(async () => { dir = await mkdtemp(join(tmpdir(), 'researchbench-relea
 afterEach(async () => { await rm(dir, { recursive: true, force: true }); });
 
 describe('immutable release preparation', () => {
+  it.each(['0.0.3-beta', '0.0.4-rc.1'])('requires the source offer for prerelease %s', async version => {
+    const strict = await committedFixture(version);
+    await expect(prepareRelease(strict)).rejects.toMatchObject({ code: 'ENOENT' });
+    await prepareSourceOffer(strict);
+    const release = await prepareRelease(strict);
+    await expect(verifyRelease(release.releaseDir, strict)).resolves.toEqual(release);
+  });
+  it('requires exact source and license offers for new production releases and includes their bytes in the snapshot', async () => {
+    const strict = await committedFixture('0.0.3');
+    await expect(prepareRelease(strict)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(stat(strict.outputRoot)).rejects.toMatchObject({ code: 'ENOENT' });
+    await prepareSourceOffer(strict);
+    const release = await prepareRelease(strict);
+    const manifest = JSON.parse(await readFile(join(release.releaseDir, 'manifest.json'), 'utf8'));
+    expect(manifest.files.filter((file: { path: string }) => file.path.startsWith('source/'))).toHaveLength(2);
+    await expect(verifyRelease(release.releaseDir, strict)).resolves.toEqual(release);
+    await writeFile(join(strict.buildDir, 'source', `researchbench-${strict.expectedHead}.license.txt`), 'wrong');
+    await expect(prepareRelease(strict)).rejects.toThrow('license differs');
+  });
   it('hashes sorted paths and bytes deterministically and never rewrites an existing release', async () => {
     const options = await fixture();
     const first = await prepareRelease(options);

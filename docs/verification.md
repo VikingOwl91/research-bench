@@ -69,6 +69,7 @@ and verifying the candidate:
 
 ```sh
 pnpm build
+pnpm source:prepare --expected-head <full-commit-SHA>
 pnpm release:prepare build .cache/releases --require-clean --expected-head <full-commit-SHA>
 pnpm release:verify <release-directory> --require-clean --expected-head <full-commit-SHA>
 pnpm hosting:check --url <https-origin> --release <release-directory>
@@ -121,3 +122,20 @@ this acceptance scope.
 Before submitting, check the actual public origin and real-provider experience,
 record the demo in at most ten minutes, then provide the repository, demo and
 video links. Optional WebLLM/WebGPU generation is not implemented.
+
+## Submission acceptance
+
+The v0.0.3 candidate remains private on GitHub until the exact production build
+passes genuine Mistral acceptance and claim-by-claim grounding. The public demo
+provides its exact commit-bound source archive and AGPL license independently
+of repository visibility. Third-party licenses and historical MIT releases
+retain their original terms.
+
+Use [the public NIST corpus](public-demo/README.md) and
+[the OBS demonstration outline](demo-script.md). Prepare and check every Studio
+output, podcast and fallback chat answer before recording. Genuine provider
+requests, listening judgments, source grounding, repository visibility, video
+upload and submission are owner actions; mock/browser gates do not certify them.
+Keep dated gate results and generated-content reviews outside the source tree,
+with the exact candidate SHA and artifact identity. No keys, private documents
+or infrastructure records belong in the repository.

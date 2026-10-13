@@ -73,6 +73,23 @@ test('production secure capabilities, local PDF/WASM/embeddings, citations, lang
     lock: await navigator.locks.request('researchbench-hosting-capability-probe', () => true),
   }))).toEqual({ secure: true, indexedDB: true, cache: true, lock: true });
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  const version = await page.evaluate(async () => (await (await fetch('/_app/version.json')).json()).version as string);
+  if (version.startsWith('0.0.3+')) {
+    const sha = version.slice('0.0.3+'.length);
+    expect(sha).toMatch(/^[a-f0-9]{40}$/);
+    const sourcePath = `/source/researchbench-${sha}.tar.gz`;
+    const licensePath = `/source/researchbench-${sha}.license.txt`;
+    await expect(page.locator(`footer a[href="${sourcePath}"]`)).toBeVisible();
+    await expect(page.locator(`footer a[href="${licensePath}"]`)).toHaveText('AGPL-3.0-or-later');
+    const source = await page.request.get(sourcePath);
+    expect(source.status()).toBe(200);
+    expect(source.headers()['content-type']).toMatch(/^application\/gzip/);
+    expect(source.headers()['content-disposition']).toMatch(/^attachment/);
+    expect((await source.body()).subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]));
+    const license = await page.request.get(licensePath);
+    expect(license.status()).toBe(200);
+    expect(await license.text()).toContain('GNU AFFERO GENERAL PUBLIC LICENSE');
+  }
   await expect(page.getByRole('heading', { name: 'Room for new insights.' })).toBeVisible();
   await importPDF(page);
   expect(modelReads).toBe(1);

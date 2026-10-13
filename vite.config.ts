@@ -21,7 +21,7 @@ const secureAdapter: typeof staticAdapter = {
 const assetManifest = JSON.parse(readFileSync(new URL('./scripts/assets-manifest.json', import.meta.url), 'utf8'));
 
 export default defineConfig({
-  define: { __MODEL_ASSET_BASE__: JSON.stringify(modelBasePath(assetManifest)) },
+  define: { __SOURCE_COMMIT__: JSON.stringify(gitSHA), __MODEL_ASSET_BASE__: JSON.stringify(modelBasePath(assetManifest)) },
   plugins: [sveltekit({
     adapter: secureAdapter,
     version: { name: `${packageVersion}+${gitSHA}` },

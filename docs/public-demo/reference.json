@@ -1,0 +1,102 @@
+{
+  "retrieved": "2026-10-13",
+  "publisher": "National Institute of Standards and Technology (NIST)",
+  "rights": {
+    "url": "https://www.nist.gov/copyrights-disclaimers",
+    "basis": "NIST public information may be copied/distributed except material marked copyrighted; NIST attribution retained. No separately copyrighted material marked on selected pages or main article. Not relicensed as ResearchBench AGPL or fixture CC0."
+  },
+  "sources": [
+    {
+      "file": "nist-ai-rmf-core-excerpt.pdf",
+      "sha256": "51dee9ec8224ef28419ead7c79eb7603048a485837adae5ba478c3df2205ed90",
+      "bytes": 169214,
+      "originalUrl": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+      "originalSha256": "7576edb531d9848825814ee88e28b1795d3a84b435b4b797d3670eafdc4a89f1",
+      "originalPages": 48,
+      "excerptPages": 2,
+      "pageMap": [
+        {
+          "appPage": 1,
+          "originalPhysicalPage": 25,
+          "originalPrintedPage": 20
+        },
+        {
+          "appPage": 2,
+          "originalPhysicalPage": 26,
+          "originalPrintedPage": 21
+        }
+      ],
+      "extraction": "qpdf --empty --pages original.pdf 25-26 -- nist-ai-rmf-core-excerpt.pdf; original page content unchanged. Each selected page raster SHA256 identical to original at 1000px."
+    },
+    {
+      "file": "nist-ai-rmf-launch.txt",
+      "sha256": "379a91255dc896c5de754a693b80d3af9fe911cfeb0a97d9b1acd47db642a15e",
+      "bytes": 5623,
+      "originalUrl": "https://www.nist.gov/news-events/news/2023/01/nist-risk-management-framework-aims-improve-trustworthiness-artificial",
+      "originalHtmlSha256": "697c3b3036dd4d179070818737629ba98f687714002b55e036e895af4469ea47",
+      "articleDate": "2023-01-26",
+      "paragraphs": 15,
+      "unicodeCharacters": 5581,
+      "extraction": "Title, subtitle, date and all 15 direct main-article paragraphs. Whitespace normalized; navigation, image, duplicate quote callout and media contacts omitted; no substantive paragraph omitted."
+    }
+  ],
+  "questions": [
+    {
+      "id": "TXT-only",
+      "question": "How long did NIST develop the framework, and how much formal consultation did it receive?",
+      "expected": "18 months; about 400 sets of formal comments from more than 240 different organizations. Preserve approximate/more-than qualifiers.",
+      "source": "nist-ai-rmf-launch.txt",
+      "appPage": 1
+    },
+    {
+      "id": "cross-source",
+      "question": "What are the four core functions, and what makes GOVERN different?",
+      "expected": "GOVERN, MAP, MEASURE, MANAGE. Governance is cross-cutting and informs the other three functions; iterative context-specific application, not a fixed ordered checklist.",
+      "sources": [
+        {
+          "file": "nist-ai-rmf-core-excerpt.pdf",
+          "appPages": [
+            1,
+            2
+          ]
+        },
+        {
+          "file": "nist-ai-rmf-launch.txt",
+          "appPage": 1
+        }
+      ]
+    },
+    {
+      "id": "PDF-only",
+      "question": "Does the AI RMF prescribe an ordered checklist, and what order may users choose?",
+      "expected": "Actions do not constitute a checklist or necessarily an ordered set of steps. Given governance, functions can be performed in any order adding value; most users begin MAP after GOVERN, then MEASURE or MANAGE; process iterative.",
+      "source": "nist-ai-rmf-core-excerpt.pdf",
+      "appPages": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "absent",
+      "question": "What percentage reduction in AI incidents has adopting this framework been proven to deliver?",
+      "expected": "Not stated in these sources; do not invent a percentage, outcome study or citation."
+    },
+    {
+      "id": "DE-retrieval",
+      "question": "Wie wirkt Governance auf die anderen Funktionen des KI-Risikomanagements?",
+      "expected": "Retrieve source passages on cross-cutting governance and iterative function application.",
+      "source": "nist-ai-rmf-core-excerpt.pdf",
+      "appPages": [
+        1,
+        2
+      ]
+    }
+  ],
+  "groundingRules": "No external factchecking. Judge claims against imported sources, including all factual assertions per podcast turn; preserve dates, qualifiers, attribution and uncertainty. This corpus supplies references, not preapproved generated outputs.",
+  "pdfRasterVerification": {
+    "tool": "pdftoppm -scale-to1000 -png",
+    "page1Sha256": "c0bcbfe6b3f164a86e4fc25d6f9a479b43db39c732199b588823022e49a62025",
+    "page2Sha256": "002080b38a15ac472ec02c6099e3dbfe1424962510ec54350f2adfabf5798c46"
+  },
+  "popplerTextEstimateCharacters": 10074
+}

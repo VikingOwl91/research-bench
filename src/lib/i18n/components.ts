@@ -66,6 +66,6 @@ export const componentMessages = {
   'components.podcast.create': { en: 'Create podcast', de: 'Podcast erstellen' },
   'components.podcast.needSource': { en: 'Add a source first.', de: 'Füge zuerst eine Quelle hinzu.' },
   'components.podcast.needKey': { en: 'Add an API key in settings.', de: 'Hinterlege einen API-Key in den Einstellungen.' },
-  'components.podcast.sent': { en: 'Source excerpts, then the dialogue, are sent to {provider}.', de: 'Quellauszüge und anschließend der Dialog werden an {provider} gesendet.' },
+  'components.podcast.sent': { en: 'Source text, then the dialogue, are sent to {provider}. Small notebooks may include their full extracted text.', de: 'Quelltext und anschließend der Dialog werden an {provider} gesendet. Bei kleinen Notebooks kann der gesamte extrahierte Text enthalten sein.' },
   'components.podcast.costs': { en: 'Speech generation may incur costs. Completed segments are saved if you cancel.', de: 'Die Vertonung kann Kosten verursachen. Bei Abbruch bleiben fertige Abschnitte gespeichert.' },
 } as const satisfies Record<string, CatalogEntry>;

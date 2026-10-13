@@ -7,7 +7,7 @@ import { resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { headersForPath } from './hosting-policy.mjs';
 
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.txt': 'text/plain', '.md': 'text/plain' };
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.txt': 'text/plain', '.md': 'text/plain', '.gz': 'application/gzip' };
 
 /** @param {{directory?: string, port?: number, headers?: (path: string) => Record<string,string>, transform?: (path: string, bytes: Buffer) => Buffer | undefined | Promise<Buffer | undefined>, transformPath?: (path: string) => boolean, extraFiles?: Map<string,string>, onRequest?: (path: string, method: string) => void}} [options] */
 export async function serveBuild({ directory = 'build', port = 4173, headers = headersForPath, transform, transformPath = () => true, extraFiles = new Map(), onRequest } = {}) {
@@ -25,7 +25,7 @@ export async function serveBuild({ directory = 'build', port = 4173, headers = h
       if (!invalid && (file === root || file.startsWith(root + sep))) {
         try { info = await stat(file); if (!info.isFile() || await realpath(file) !== file) info = undefined; } catch {}
       }
-      if (!info && !invalid && !extname(pathname) && !/^\/(?:_app|models|runtime|pdfium|notices)(?:\/|$)/.test(pathname)) {
+      if (!info && !invalid && !extname(pathname) && !/^\/(?:_app|models|runtime|pdfium|notices|source)(?:\/|$)/.test(pathname)) {
         file = resolve(root, 'index.html'); filePath = 'index.html'; info = await stat(file);
       }
       const safeHeaders = headers(info ? filePath : pathname);

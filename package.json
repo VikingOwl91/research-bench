@@ -1,11 +1,15 @@
 {
   "name": "research-bench",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.28.5",
-  "imports": { "#lib/*": "./src/lib/*" },
-  "engines": { "node": ">=22.17" },
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
+  "engines": {
+    "node": ">=22.17"
+  },
   "scripts": {
     "dev": "vite dev --host 127.0.0.1",
     "build": "vite build",
@@ -20,7 +24,8 @@
     "release:prepare": "node scripts/release-static.mjs prepare",
     "release:verify": "node scripts/release-static.mjs verify",
     "hosting:check": "node scripts/check-hosting.mjs",
-    "verify": "pnpm check && pnpm test && cargo test --manifest-path crates/research-core/Cargo.toml && pnpm build"
+    "verify": "pnpm check && pnpm test && cargo test --manifest-path crates/research-core/Cargo.toml && pnpm build",
+    "source:prepare": "node scripts/source-offer.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "1.2.7",
@@ -41,5 +46,6 @@
     "vite": "8.3.4",
     "vitest": "5.0.3",
     "fake-indexeddb": "6.2.5"
-  }
+  },
+  "license": "AGPL-3.0-or-later"
 }
