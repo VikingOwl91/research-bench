@@ -1,4 +1,4 @@
-# ResearchBench · v0.0.1
+# ResearchBench · v0.0.2
 
 **Deine Quellen. Dein Wissen. Dein Browser.**
 

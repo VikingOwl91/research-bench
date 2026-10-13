@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.2 — 2026-10-13
+
+Cited podcasts, English-first localization and hardened static releases.
+
+- Two-host podcasts, local MP3 export and contribution-level transcript navigation.
+- English UI and podcasts by default; German UI and experimental German voices.
+- Restrictive document and Worker CSPs, framing protection and HTTPS security headers.
+- Clean-commit-bound static release artifacts and public hosting acceptance checks.
+- Content-addressed embedding assets and explicit browser-cache regression coverage.
+- API-key session-restore disclosures and visible Unicode direction controls in filenames.
+- Paused transcript seek correction, speaker playback rates and native audio regressions.
+- Network-free reuse of prepared assets and bundled pinned license texts.
+
 ## 0.0.1 — 2026-10-12
 
 First version of ResearchBench: a static browser research workbench with a

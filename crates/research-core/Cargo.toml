@@ -1,6 +1,6 @@
 [package]
 name = "research-core"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 license = "MIT"
 description = "Local parsing, Unicode chunking and retrieval for ResearchBench"
