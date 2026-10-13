@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Worker, chromium, firefox } from '@playwright/test';
 import { readdir, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { build } from 'vite';
 import { Mp3Encoder } from '@breezystack/lamejs';
 import { serveBuild } from '../../scripts/serve-build.mjs';
@@ -143,12 +144,13 @@ for (const instrumented of [true, false]) test(`real WAV/PCM/MP3 decode, native 
   } finally { await page.close(); await server.close(); }
 });
 
-test('versioned 118-MB model reuses browser HTTP cache with a 2-GiB cache budget, independently of CacheStorage', async ({ browserName }) => {
-  await mkdir(resolve('.cache/security-fixtures'), { recursive: true });
-  const profile = await mkdtemp(resolve('.cache/security-fixtures/http-cache-profile-'));
+test('versioned 118-MB model reuses browser HTTP cache with a 1-GiB cache budget, independently of CacheStorage', async ({ browserName }) => {
+  // Use a temporary-filesystem profile: a large home disk can mask an ignored budget.
+  const profile = await mkdtemp(resolve(tmpdir(), 'researchbench-http-cache-profile-'));
   const context = await (browserName === 'chromium' ? chromium : firefox).launchPersistentContext(profile, {
     headless: true, serviceWorkers: 'block',
-    ...(browserName === 'chromium' ? { args: ['--disk-cache-size=2147483648'] } : { firefoxUserPrefs: { 'browser.cache.disk.capacity': 2097152, 'browser.cache.disk.smart_size.enabled': false, 'browser.cache.disk.max_entry_size': -1 } })
+    // Full Chromium honors this signed-integer preference; headless shell ignores it.
+    ...(browserName === 'chromium' ? { channel: 'chromium', args: ['--disk-cache-size=1073741824'] } : { firefoxUserPrefs: { 'browser.cache.disk.capacity': 1048576, 'browser.cache.disk.smart_size.enabled': false, 'browser.cache.disk.max_entry_size': -1 } })
   });
   const page = context.pages()[0] ?? await context.newPage();
   await page.addInitScript(installWasmProbe);

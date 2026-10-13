@@ -50,8 +50,9 @@ Rust, PDFium and ONNX compile in the pipeline Worker; the audio encoder is
 JavaScript and needs no additional WASM permission. Zod is configured without
 JIT before constructing schemas, avoiding dynamic-code probes under CSP.
 
-The large-model HTTP-cache test uses owned persistent browser profiles with an
-explicit cache budget. This demonstrates the immutable URL/cache contract,
+The large-model HTTP-cache test uses owned temporary persistent profiles in
+full Chromium and Firefox, with an explicit 1-GiB cache budget. This demonstrates
+the immutable URL/cache contract,
 not guaranteed retention in every default browser profile. CacheStorage reuse
 is tested separately. Browser eviction or user deletion can require another
 model download.
