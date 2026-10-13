@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildPodcastScriptBody, generatePodcastScript, PODCAST_AUDIO_MODELS, PODCAST_ENCODER_VERSION, PODCAST_VOICE_SLUGS, resolvePodcastAudioConfig, synthesizePodcastTurn, validatePodcastScript } from '../../src/lib/podcast-providers';
 import type { Citation, PodcastAudioConfig, Provider } from '../../src/lib/types';
+import { GROUNDING_INSTRUCTIONS } from '../../src/lib/grounding-instructions';
 const citations: Citation[] = [{ id: 'C1', sourceId: 's', sourceName: 'Fiktiv', page: 1, start: 0, end: 4, text: 'Beleg' }];
 const script = { title: 'Zwei Gedanken', language: 'de' as const, turns: Array.from({ length: 4 }, (_, index) => ({ speaker: index % 2 ? 'B' : 'A', text: `Beitrag ${index}`, citationIds: ['C1'] })) };
 const signal = () => new AbortController().signal;
@@ -8,8 +9,22 @@ const request = (provider: Provider = 'mistral') => ({ provider, key: 'dummy-tes
 const config = (provider: Provider = 'mistral'): PodcastAudioConfig => ({ provider, model: PODCAST_AUDIO_MODELS[provider], format: provider === 'mistral' ? 'wav' : 'mp3', voices: { A: { id: provider === 'mistral' ? 'preset-a' : PODCAST_VOICE_SLUGS.A, slug: PODCAST_VOICE_SLUGS.A }, B: { id: provider === 'mistral' ? 'preset-b' : PODCAST_VOICE_SLUGS.B, slug: PODCAST_VOICE_SLUGS.B } }, encoderVersion: PODCAST_ENCODER_VERSION, pauseMs: 180 });
 
 describe('podcast script contract', () => {
+  it.each(['mistral', 'openrouter'] as const)('applies the same excerpt-only grounding rules to %s podcast facts without changing sources or schema', provider => {
+    const body = buildPodcastScriptBody(request(provider)) as any;
+    expect(body.messages.map((entry: { role: string }) => entry.role)).toEqual(['system', 'user']);
+    expect(body.messages[0].content).toContain(GROUNDING_INSTRUCTIONS);
+    expect(JSON.parse(body.messages[1].content)).toEqual({ language: 'de', sources: [{ id: 'C1', page: 1, text: 'Beleg' }] });
+    expect(body.temperature).toBe(0.4);
+    expect(body.response_format.json_schema.schema.properties.turns.items.properties.citationIds.items.enum).toEqual(['C1']);
+    expect(body.messages[0].content).toContain('Split a block or podcast contribution');
+    expect(body.messages[0].content).toContain('Shorter answers are allowed within the JSON schema');
+  });
   it('creates stable local contribution IDs and allows source-sparse scripts', () => {
     expect(validatePodcastScript(script, citations, 'de').turns.map(t => t.id)).toEqual(['T1', 'T2', 'T3', 'T4']);
+  });
+  it('preserves explicit missing-evidence contributions with an empty citation list', () => {
+    const sparse = { ...script, turns: [{ ...script.turns[0], text: 'The supplied excerpts do not define these roles.', citationIds: [] }, ...script.turns.slice(1)] };
+    expect(validatePodcastScript(sparse, citations, 'de').turns[0].citationIds).toEqual([]);
   });
   it.each([
     { ...script, language: 'en' }, { ...script, turns: script.turns.slice(0, 3) },

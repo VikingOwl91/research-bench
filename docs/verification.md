@@ -119,6 +119,40 @@ though output is escaped, citations are validated and the key is absent from
 prompt content. Claims of source truth or automatic GDPR compliance are outside
 this acceptance scope.
 
+### Grounding regression: partial NIST excerpts
+
+The initial genuine-provider acceptance found unsupported elaboration in an
+answer explaining the four AI RMF Core functions. The imported PDF contains
+only printed pages 20–21. Valid citation IDs accompanied detailed MAP, MEASURE
+and MANAGE definitions that those excerpts do not supply. Exact citation spans
+and source navigation were intact; citation membership validation checks
+identity, not whether a passage supports every assertion.
+
+The shared generation instructions now require support at the specificity of
+each factual clause, separate claims with different supporting excerpts, and
+explicitly acknowledge missing details. Prior answers are bounded follow-up
+data, never current evidence. These rules cover chat, Summary, FAQ, Study Guide
+and podcast scripts without expanding the imported corpus or retrieval.
+Search previews mark clipped fragments and remove cut word edges where
+possible; the indexed text and citation offsets remain unchanged.
+
+Repeat the original question against the same two imported sources:
+
+> How does the NIST announcement describe the purpose of the AI RMF, and how
+> does the framework's Core turn that purpose into practical risk management
+> activities? Explain the four functions and how they work together.
+
+Check every factual clause against its selected citation, including how the
+functions work together. Naming a function does not substantiate its detailed
+definition. Follow up by asking which specific MAP, MEASURE and MANAGE duties
+the supplied excerpts describe; missing duties must remain explicitly missing.
+The GOVERN discussion on printed page 21 does contain policies, culture and
+third-party legal issues: judge the selected passage rather than rejecting all
+legal discussion. Unit and mocked-browser checks verify request boundaries and
+source integrity, not real-model entailment. Genuine-provider grounding and
+the submission acceptance gate remain open until the owner repeats this check
+and completes the remaining generated-content review.
+
 Before submitting, check the actual public origin and real-provider experience,
 record the demo in at most ten minutes, then provide the repository, demo and
 video links. Optional WebLLM/WebGPU generation is not implemented.

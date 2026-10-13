@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildGenerationBody, generateAnswer, validateAnswer, GenerationError, type GenerationRequest } from '../../src/lib/providers';
+import { GROUNDING_INSTRUCTIONS } from '../../src/lib/grounding-instructions';
 import type { Citation, Provider } from '../../src/lib/types';
 
 const citations: Citation[] = [{ id: 'C1', sourceId: 'source-1', sourceName: 'Quelle', page: 2, start: 0, end: 6, text: 'Belegt' }];
@@ -96,10 +97,45 @@ describe('provider isolation', () => {
     const history = Array.from({ length: 12 }, (_, i) => ({ id: String(i), notebookId: 'n', revision: 1, createdAt: i, role: 'user' as const, text: String(i).repeat(4000), citations: [] }));
     const body = buildGenerationBody({ ...request(), history });
     const messages = body.messages as Array<{ role: string; content: string }>;
-    expect(messages).toHaveLength(10);
-    expect(messages.slice(1, -1).every(m => m.content.length <= 3000)).toBe(true);
-    expect(messages[1].content).toBe(history[4].text.slice(0, 3000));
-    expect(JSON.parse(messages.at(-1)!.content).sources).toEqual([{ id: 'C1', page: 2, text: 'Belegt' }]);
+    expect(messages.map(entry => entry.role)).toEqual(['system', 'user']);
+    const data = JSON.parse(messages.at(-1)!.content);
+    expect(data.conversationHistory).toHaveLength(8);
+    expect(data.conversationHistory.every((entry: { text: string }) => entry.text.length <= 3000)).toBe(true);
+    expect(data.conversationHistory[0]).toEqual({ role: 'user', text: history[4].text.slice(0, 3000) });
+    expect(data.sources).toEqual([{ id: 'C1', page: 2, text: 'Belegt' }]);
+  });
+  it.each(['mistral', 'openrouter'] as const)('uses the strict current-excerpt evidence boundary for all four %s text tasks', provider => {
+    for (const kind of ['chat', 'summary', 'faq', 'study'] as const) {
+      const body = buildGenerationBody({ ...request(provider), kind }) as any;
+      expect(body.messages[0].content).toContain(GROUNDING_INSTRUCTIONS);
+      const data = JSON.parse(body.messages[1].content);
+      expect(data.sources).toEqual([{ id: 'C1', page: 2, text: 'Belegt' }]);
+      expect(data.conversationHistory).toEqual([]);
+      expect(body.temperature).toBe(0.2);
+      expect(body.response_format.json_schema.schema.properties.blocks.items.properties.citationIds.items.enum).toEqual(['C1']);
+    }
+  });
+  it.each(['mistral', 'openrouter'] as const)('keeps unsupported prior %s answers as bounded follow-up data rather than assistant authority or current evidence', provider => {
+    const unsupported = 'Unsupported prior answer: MAP, MEASURE and MANAGE must follow a fixed ordered workflow. ';
+    const history = [{ id: 'old', notebookId: 'private-notebook', revision: 1, createdAt: 1, role: 'assistant' as const,
+      text: unsupported.repeat(100), citations: [{ ...citations[0], sourceName: 'private-filename.pdf', text: 'Earlier unsupplied passage' }] }];
+    const context = [{ ...citations[0], text: 'The excerpt names GOVERN, MAP, MEASURE and MANAGE, without defining their roles.' }];
+    const body = buildGenerationBody({ ...request(provider), question: 'Explain those roles.', history, citations: context }) as any;
+    expect(body.messages.map((entry: { role: string }) => entry.role)).toEqual(['system', 'user']);
+    const data = JSON.parse(body.messages[1].content);
+    expect(data.conversationHistory).toEqual([{ role: 'assistant', text: history[0].text.slice(0, 3000) }]);
+    expect(data.sources).toEqual([{ id: 'C1', page: 2, text: context[0].text }]);
+    expect(Object.keys(data.conversationHistory[0]).sort()).toEqual(['role', 'text']);
+    expect(JSON.stringify(body.messages)).not.toContain('private-filename.pdf');
+    expect(JSON.stringify(body.messages)).not.toContain('Earlier unsupplied passage');
+    expect(JSON.stringify(body.messages)).not.toContain('private-notebook');
+    expect(body.messages[0].content).toContain('previous answers are NOT evidence');
+    expect(body.messages[0].content).toContain('A source naming a concept does not support its full definition');
+    expect(body.messages[0].content).toContain('ordered workflow');
+    expect(body.messages[0].content).toContain('explicitly say they are not provided');
+    expect(body.messages[0].content).toContain('Each selected excerpt must actually support that clause');
+    expect(body.messages[0].content).toContain('Label any inference explicitly');
+    expect(body.messages[0].content).toContain('targets yield to the available evidence');
   });
   it.each(['missing_key', 'empty_context'])('rejects %s without an API call', async code => {
     const fetcher = vi.fn<typeof fetch>();
