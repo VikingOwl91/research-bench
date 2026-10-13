@@ -51,6 +51,33 @@ test('English default ignores browser language; live UI choice persists without 
   await page.screenshot({ path: `.cache/verification/${test.info().project.name}-i18n-en-mobile.png`, fullPage: true });
 });
 
+test('source-reference limits remain visible in EN/DE chat and every Studio tab on desktop/mobile', async ({ page }) => {
+  await ready(page);
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    for (const language of ['en', 'de'] as const) {
+      await page.locator('#interface-language').selectOption(language);
+      const english = language === 'en';
+      const limitation = english ? 'factual support is not automatically verified' : 'die inhaltliche Belegbarkeit wird nicht automatisch geprüft';
+      const unsupported = english ? 'unsupported claims' : 'unbelegte Aussagen';
+      if (width === 390) await page.locator('.mobile-navigation').getByRole('button', { name: english ? 'Research' : 'Recherche', exact: true }).click();
+      await expect(page.locator('.local-pill')).toHaveText(english ? 'Source references' : 'Quellenverweise');
+      await expect(page.locator('.composer-footnote')).toBeVisible();
+      await expect(page.locator('.composer-footnote')).toContainText(limitation);
+      await expect(page.locator('.composer-footnote')).toContainText(unsupported);
+      if (width === 390) await page.locator('.mobile-navigation').getByRole('button', { name: 'Studio', exact: true }).click();
+      for (const tab of [english ? 'Overview' : 'Überblick', 'FAQ', english ? 'Learn' : 'Lernen', 'Podcast']) {
+        await page.locator('.generator-tabs').getByRole('button', { name: tab, exact: true }).click();
+        await expect(page.locator('.studio-intro .source-reference-note')).toBeVisible();
+        await expect(page.locator('.studio-intro .source-reference-note')).toContainText(limitation);
+        await expect(page.locator('.studio-intro .source-reference-note')).toContainText(unsupported);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: `.cache/verification/${test.info().project.name}-transparency-${language}-${width}.png`, fullPage: true });
+    }
+  }
+});
+
 test('invalid and blocked language storage keep an English default and allow in-memory switching', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('researchbench:locale', 'fr');
@@ -77,6 +104,7 @@ test('locale changes preserve indexing and generation; errors and source control
   await expect(page.locator('.progress-banner')).toContainText('Lokales Modell wird geladen');
   await expect(page.locator('.progress-banner')).toContainText('Datei 1 / 1');
   await model!.continue();
+  await page.unroute('**/onnx/model_quantized.onnx');
   await expect(page.locator('.source-open')).toBeVisible({ timeout: 180000 });
   await expect(page.locator('#source-upload')).toBeEnabled({ timeout: 180000 });
   await page.locator('#interface-language').selectOption('en');
@@ -88,9 +116,9 @@ test('locale changes preserve indexing and generation; errors and source control
   await page.locator('#question').press('Enter');
   await expect.poll(() => prompts.length).toBe(1);
   expect(prompts[0]).toContain('Respond in English');
-  await expect(page.locator('.progress-banner')).toContainText('is generating a grounded answer');
+  await expect(page.locator('.progress-banner')).toContainText('is generating an answer using your sources');
   await page.locator('#interface-language').selectOption('de');
-  await expect(page.locator('.progress-banner')).toContainText('generiert eine belegte Antwort');
+  await expect(page.locator('.progress-banner')).toContainText('generiert eine Antwort anhand deiner Quellen');
   await answer(pending!, 'English answer remains English');
   await expect(page.locator('.chat-message:not(.user-message)')).toContainText('English answer remains English');
   expect(prompts).toHaveLength(1);

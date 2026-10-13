@@ -11,7 +11,10 @@ terminals, notification previews and other workspaces out of the capture.
 The owner enters the funded Mistral key in the UI; never copy it into logs.
 
 Check the exact frozen production build on the existing domain first. Keep
-GitHub private until real live acceptance and grounding pass. Use the
+GitHub private and v0.0.3 untagged until the owner explicitly authorizes
+publication and tagging. Functional and security/privacy live acceptance remain
+required. Semantic grounding is a documented, accepted prototype limitation.
+Use the
 [reference questions](public-demo/reference.json) for extraction/retrieval and
 the absent-information check. Generate and audit a chat answer, Summary, FAQ,
 Study Guide and complete English podcast before starting OBS. Listen to both
@@ -46,8 +49,8 @@ model/runtime files are downloaded once subject to browser caching.
 
 ## 2:00–3:15: chat and citations
 
-Show the prepared, verified answer and click its citation to reveal the exact
-source text. Ask how the four functions relate, or use the checked question
+Show the prepared, manually checked answer and click its citation to reveal
+the exact source text. Ask how the four functions relate, or use the checked question
 about the consultation process. Identify prepared content as prepared.
 
 One live chat request is optional. After 15 seconds, or immediately on an error,
@@ -56,8 +59,8 @@ to that answer without retrying. Never present it as the completed live request.
 
 ## 3:15–4:00: prepared learning material
 
-Switch between the verified Summary, FAQ and Study Guide. Show their citations
-and coverage label. These were generated before recording. Do not press
+Switch between the manually checked Summary, FAQ and Study Guide. Show their
+citations and coverage label. These were generated before recording. Do not press
 Regenerate during the recording.
 
 ## 4:00–5:30: prepared podcast
@@ -75,7 +78,9 @@ Show Rust/WASM parsing, Unicode source spans, fixed-size overlap and cosine
 retrieval; explain local multilingual E5 embeddings and IndexedDB. Describe the
 shared schema and citation membership checks, local encoder Worker and atomic
 final audio publication. Explain that citation validity proves a source span
-exists, not that every generated claim is semantically supported.
+exists, not that every generated claim is semantically supported. Say explicitly:
+“Citations link to source passages. ResearchBench does not automatically verify
+factual support, and generated content can include unsupported claims.”
 
 Show only gate results actually run for the final SHA. Distinguish mocked API
 security/browser tests from owner-operated real generation and listening tests.
@@ -90,11 +95,13 @@ Show the repository and live demo links.
 
 ## Acceptance and submission
 
-Record at least 12 checked factual claims distributed across chat, Summary, FAQ
-and Study Guide, and check every factual assertion in the podcast transcript.
-Use supported, contradicted, unsupported or explicit valid inference verdicts;
-check names, numbers, qualifiers and attribution. Preserve unsuccessful trials
-in the private evidence record. An unresolved grounding failure blocks the demo.
+Manually review the prepared chat, Summary, FAQ, Study Guide and podcast selected
+for the recording, including names, numbers, qualifiers and attribution. Show
+checked statements, or identify unsupported statements and limitations explicitly;
+do not present citations as automatic proof. Preserve unsuccessful trials in the
+private evidence record. The nine negative grounding cases remain FAIL, accepted
+as a disclosed v0.0.3 prototype limitation rather than a blocker for recording.
+Functional and security/privacy failures still block acceptance.
 
 The owner publishes the accepted recording as an unlisted YouTube video. Use a
 ResearchBench title and the repository/live URLs in the description. Review the

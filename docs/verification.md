@@ -113,8 +113,10 @@ quality, transitions, pronunciation and live account routing/billing require
 listening with a user-owned key. Automated synthetic tones cannot establish
 those properties.
 
-ResearchBench grounds output in supplied sources; it does not independently
-fact-check them. Prompt injection can still influence generated wording even
+ResearchBench supplies source passages to generation and validates citation IDs
+and source navigation. It does not automatically verify that generated claims
+are supported by those passages, or independently fact-check the sources.
+Prompt injection can still influence generated wording even
 though output is escaped, citations are validated and the key is absent from
 prompt content. Claims of source truth or automatic GDPR compliance are outside
 this acceptance scope.
@@ -149,9 +151,11 @@ the supplied excerpts describe; missing duties must remain explicitly missing.
 The GOVERN discussion on printed page 21 does contain policies, culture and
 third-party legal issues: judge the selected passage rather than rejecting all
 legal discussion. Unit and mocked-browser checks verify request boundaries and
-source integrity, not real-model entailment. Genuine-provider grounding and
-the submission acceptance gate remain open until the owner repeats this check
-and completes the remaining generated-content review.
+source integrity, not real-model entailment. This retest documents model
+behavior; it is not an implemented semantic verification gate. Genuine-provider
+functionality and review of the content chosen for the demonstration remain
+required; semantic claim-level grounding is an accepted v0.0.3 prototype
+limitation, not a mandatory release criterion.
 
 The genuine Mistral retest of `beb0ff4` still produced unsupported MAP,
 MEASURE, MANAGE and GOVERN details. The prompt-only correction did not pass
@@ -181,18 +185,28 @@ original internal chunk IDs. Successful answers already persist this source
 snapshot; failed or canceled generations have no saved assistant answer and
 no corresponding export. The file proves which source projection was saved
 for that answer, not the complete wire request, provider processing or semantic
-support. Exporting the owner's original saved answers is necessary before
-treating a controlled reenactment as evidence of their actual selected context.
+support. The two supplied original exports can be inspected independently as
+Snapshot A and Snapshot B. They omit answer identity and citation assignments,
+so their correspondence to the two original answers remains unknown. This
+evidence gap is accepted for the prototype; no further original-data extraction
+is required. Controlled reenactments do not replace original evidence.
 
 A deterministic allowed-ID check proves membership. An exact-quotation check
 can prove that quoted text was supplied, but not that it supports accompanying
 generated prose. Keyword overlap also permits negation inversions and assigning
 a GOVERN statement to MAP. Restricting factual output itself to quotations
-would prevent invented factual wording, while changing paraphrasing,
+would restrict factual wording without guaranteeing appropriate attribution,
+while changing paraphrasing,
 translation and podcast behavior. Such a product-contract change needs an
 explicit decision; no semantic checker or extractive mode has been added.
-The genuine grounding gate remains FAIL until a correction passes the owner's
-claim-by-claim retest.
+Semantic grounding remains **FAIL**: all nine known private forensic regression cases
+are accepted when their citation IDs are valid. Keep those cases and rejection
+expectations unchanged. These cases are separate from the structural automated
+checks above; passing CI does not establish semantic support. The owner accepts
+this documented limitation for the
+v0.0.3 prototype; it is not a fix or a passing semantic test. UI and demo language
+must distinguish source references from verified factual support. Semantic
+verification and improved graphic-text extraction remain backlog work.
 
 Before submitting, check the actual public origin and real-provider experience,
 record the demo in at most ten minutes, then provide the repository, demo and
@@ -200,9 +214,13 @@ video links. Optional WebLLM/WebGPU generation is not implemented.
 
 ## Submission acceptance
 
-The v0.0.3 candidate remains private on GitHub until the exact production build
-passes genuine Mistral acceptance and claim-by-claim grounding. The public demo
-provides its exact commit-bound source archive and AGPL license independently
+Keep the v0.0.3 candidate private on GitHub and untagged until the owner
+explicitly authorizes publication and tagging. The exact production build must
+pass functional and security/privacy acceptance, including the real Mistral
+experience. Semantic grounding remains FAIL and is an explicitly accepted
+prototype limitation with transparent disclosure; it does not independently
+block v0.0.3. This acceptance does not authorize deployment or publication.
+The public demo provides its exact commit-bound source archive and AGPL license independently
 of repository visibility. Third-party licenses and historical MIT releases
 retain their original terms.
 

@@ -3,7 +3,7 @@ import type { CatalogEntry } from './index';
 export const componentMessages = {
   'components.provider.mistral': { en: 'Mistral direct', de: 'Mistral direkt' },
   'components.provider.openrouter': { en: 'OpenRouter', de: 'OpenRouter' },
-  'components.citations': { en: 'Source citations', de: 'Quellenbelege' },
+  'components.citations': { en: 'Source citations', de: 'Quellenverweise' },
   'components.citation.page': { en: 'Page {page}', de: 'Seite {page}' },
   'components.citation.removed': { en: '(removed)', de: '(entfernt)' },
   'components.citation.unavailable': { en: 'Citation unavailable', de: 'Beleg nicht verfügbar' },
@@ -60,7 +60,7 @@ export const componentMessages = {
   'components.podcast.deleteEpisode': { en: 'Delete saved episode', de: 'Gespeicherte Folge löschen' },
   'components.podcast.emptyTitle': { en: 'Your knowledge, out loud.', de: 'Dein Wissen zum Hören.' },
   'components.podcast.emptyDescription': { en: 'Two hosts develop ideas, ask questions and connect your sources.', de: 'Zwei Hosts entwickeln Gedanken, stellen Fragen und verbinden deine Quellen.' },
-  'components.podcast.featureCitations': { en: 'With traceable source citations', de: 'Mit nachvollziehbaren Quellenbelegen' },
+  'components.podcast.featureCitations': { en: 'With traceable source citations', de: 'Mit nachvollziehbaren Quellenverweisen' },
   'components.podcast.featureDownload': { en: 'Transcript, player and MP3 download', de: 'Transkript, Player und MP3-Download' },
   'components.podcast.recreate': { en: 'Create podcast again', de: 'Podcast neu erstellen' },
   'components.podcast.create': { en: 'Create podcast', de: 'Podcast erstellen' },

@@ -74,8 +74,8 @@ export const runtimeMessages = {
     "de": "Die Modellversion des Index stimmt nicht überein."
   },
   "runtime.answerProgress": {
-    "en": "{provider} is generating a grounded answer",
-    "de": "{provider} generiert eine belegte Antwort"
+    "en": "{provider} is generating an answer using your sources",
+    "de": "{provider} generiert eine Antwort anhand deiner Quellen"
   },
   "runtime.studioProgress": {
     "en": "Generating studio content",
@@ -106,8 +106,8 @@ export const runtimeMessages = {
     "de": "Podcast-Stimmen prüfen"
   },
   "runtime.podcastScript": {
-    "en": "Writing a grounded podcast conversation",
-    "de": "Belegtes Podcast-Gespräch wird geschrieben"
+    "en": "Writing a podcast conversation using your sources",
+    "de": "Podcast-Gespräch anhand deiner Quellen wird geschrieben"
   },
   "runtime.podcastProviderChanged": {
     "en": "This draft uses a different provider. Select the original provider to resume.",

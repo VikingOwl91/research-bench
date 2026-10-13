@@ -328,7 +328,7 @@ export class ResearchBenchController {
         progress({ stage: 'Podcast-Stimmen prüfen', current: 0, total: 0 });
         const audioConfig = await (this.podcast.resolveAudioConfig ?? resolvePodcastAudioConfig)(provider, key, signal);
         await this.assertPodcastSource(id, notebook.id, notebook.revision, config, epoch);
-        progress({ stage: 'Belegtes Podcast-Gespräch wird geschrieben', current: 0, total: 0 });
+        progress({ stage: 'Podcast-Gespräch anhand deiner Quellen wird geschrieben', current: 0, total: 0 });
         const script = await (this.podcast.generateScript ?? generatePodcastScript)({ provider, key, language, citations: context.citations, signal });
         await this.assertPodcastSource(id, notebook.id, notebook.revision, config, epoch);
         const draft: PodcastArtifact = {

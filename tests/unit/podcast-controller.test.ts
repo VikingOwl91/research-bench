@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResearchBenchController, type PodcastServices, type PodcastLockManager } from '../../src/lib/controller';
+import { translateMessage } from '../../src/lib/i18n/index';
 import { EMBEDDING_VERSION } from '../../src/lib/constants';
 import { LocalPipeline } from '../../src/lib/pipeline';
 import { BenchStorage, DB_NAME } from '../../src/lib/storage';
@@ -77,6 +78,17 @@ beforeEach(async () => {
 afterEach(async () => { controller.cancel(); await storage.clear(); await storage.close(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('podcast controller workflow', () => {
+  it('presents the source-based script stage in both languages during generation', async () => {
+    generateScript.mockImplementationOnce(async request => {
+      expect(state.progress?.stageMessage?.key).toBe('runtime.podcastScript');
+      expect(translateMessage('en', state.progress!.stageMessage!)).toBe('Writing a podcast conversation using your sources');
+      expect(translateMessage('de', state.progress!.stageMessage!)).toBe('Podcast-Gespräch anhand deiner Quellen wird geschrieben');
+      return script(request.language);
+    });
+    await controller.generatePodcast('en');
+    expect(generateScript).toHaveBeenCalledTimes(1);
+    expect(state.error).toBeNull();
+  });
   it('creates and reloads a podcast without eagerly reading audio', async () => {
     const reading = vi.spyOn(storage, 'getPodcastAudio');
     await controller.generatePodcast('de');

@@ -166,7 +166,7 @@
 
     <aside class="studio-panel panel" class:mobile-visible={mobilePane === 'studio'}>
       <div class="panel-header"><div class="panel-title"><Sparkles size={17}/><h2>{$t('page.studio')}</h2></div><span class="studio-badge">{$t('page.studioBadge')}</span></div>
-      <div class="studio-intro"><h3>{$t('page.studioTitle')}</h3><p>{$t('page.studioIntro')}</p></div>
+      <div class="studio-intro"><h3>{$t('page.studioTitle')}</h3><p>{$t('page.studioIntro')}</p><p class="source-reference-note">{$t('page.chatFootnote')}</p></div>
       <div class="generator-tabs" role="group" aria-label={$t('page.selectContent')}>{#each Object.entries(generatorDetails) as [kind, details]}<button class:active={generator === kind} onclick={() => generator = kind as StudioKind}><svelte:component this={details.icon} size={18}/><span>{$t(kind === 'summary' ? 'page.summaryTab' : kind === 'faq' ? 'page.faqTitle' : kind === 'study' ? 'page.studyTab' : 'page.podcastTitle')}</span></button>{/each}</div>
       {#if generator === 'podcast' && controller}
         {#key state.activeNotebook?.id}<PodcastView {controller} {state} onCitation={showCitation} onDelete={(episode) => requestDelete('podcast', episode.script.title, episode.id)}/>{/key}
