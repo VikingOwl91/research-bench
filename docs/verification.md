@@ -153,6 +153,47 @@ source integrity, not real-model entailment. Genuine-provider grounding and
 the submission acceptance gate remain open until the owner repeats this check
 and completes the remaining generated-content review.
 
+The genuine Mistral retest of `beb0ff4` still produced unsupported MAP,
+MEASURE, MANAGE and GOVERN details. The prompt-only correction did not pass
+semantic acceptance. Controlled provider fixtures reproduce a separate,
+deterministic failure: the local validator accepts those additions when their
+citation IDs are valid. This demonstrates the validation gap, not how the real
+provider internally produced its response.
+
+Figure 5 on printed page 20 contains short function descriptions visually.
+Both PDFium and independent text extraction omit that diagram text. The model
+receives extracted text, not the original page image. Do not confuse facts
+visible in the uploaded PDF with passages actually transmitted to the model;
+the diagram does not substantiate the additional detailed duties either.
+
+### Local source-context diagnosis
+
+Every completed chat answer has **Export source context** (German:
+**Quellenkontext exportieren**). The download contains exactly
+`{"sources":[{"id":"C1","page":1,"text":"…"}]}`, projected from that
+answer's saved input citations. It includes every selected passage, including
+those the answer did not cite. It uses the frozen snapshot after reload or
+source changes, without rerunning retrieval or contacting a provider.
+
+The export excludes filenames, notebook metadata, questions, history, API
+settings and request headers. IDs are request-local citation aliases, not
+original internal chunk IDs. Successful answers already persist this source
+snapshot; failed or canceled generations have no saved assistant answer and
+no corresponding export. The file proves which source projection was saved
+for that answer, not the complete wire request, provider processing or semantic
+support. Exporting the owner's original saved answers is necessary before
+treating a controlled reenactment as evidence of their actual selected context.
+
+A deterministic allowed-ID check proves membership. An exact-quotation check
+can prove that quoted text was supplied, but not that it supports accompanying
+generated prose. Keyword overlap also permits negation inversions and assigning
+a GOVERN statement to MAP. Restricting factual output itself to quotations
+would prevent invented factual wording, while changing paraphrasing,
+translation and podcast behavior. Such a product-contract change needs an
+explicit decision; no semantic checker or extractive mode has been added.
+The genuine grounding gate remains FAIL until a correction passes the owner's
+claim-by-claim retest.
+
 Before submitting, check the actual public origin and real-provider experience,
 record the demo in at most ten minutes, then provide the repository, demo and
 video links. Optional WebLLM/WebGPU generation is not implemented.

@@ -41,6 +41,8 @@ export const pageMessages = {
   "page.olderSources": {"en": "Earlier source version", "de": "Älterer Quellenstand"},
   "page.you": {"en": "You", "de": "Du"},
   "page.yourQuestion": {"en": "Your question", "de": "Deine Frage"},
+  "page.exportSourceContext": {"en": "Export source context", "de": "Quellenkontext exportieren"},
+  "page.exportSourceContextHint": {"en": "Download all passages selected for this answer with their IDs and pages, including uncited passages. No key or request headers.", "de": "Alle für diese Antwort ausgewählten Passagen mit IDs und Seiten herunterladen, auch unzitierte Passagen. Ohne Key oder Request-Header."},
   "page.chatEyebrow": {"en": "FROM SOURCES TO INSIGHTS", "de": "VON QUELLEN ZU ERKENNTNISSEN"},
   "page.chatEmptyTitle": {"en": "What would you like to understand?", "de": "Was möchtest du verstehen?"},
   "page.chatEmptyIntro": {"en": "Add your sources and ask a question.", "de": "Füge deine Quellen hinzu und stelle eine Frage."},
