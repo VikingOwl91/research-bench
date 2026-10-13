@@ -16,7 +16,7 @@ export function sourceOfferNames(head) {
   return { archive: `researchbench-${head}.tar.gz`, license: `researchbench-${head}.license.txt` };
 }
 export function safeSourcePath(path) {
-  if (typeof path !== 'string' || !/^[A-Za-z0-9_.\/-]+$/.test(path) || path.split('/').some(part => !part || part === '.' || part === '..' || part.startsWith('-') || part === '.git')) throw new Error('Unsafe source path');
+  if (typeof path !== 'string' || !/^[A-Za-z0-9_.+\/-]+$/.test(path) || path.split('/').some(part => !part || part === '.' || part === '..' || part.startsWith('-') || part === '.git')) throw new Error('Unsafe source path');
   return path;
 }
 function git(repoRoot, args, binary = false) {

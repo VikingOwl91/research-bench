@@ -19,6 +19,10 @@ async function fixture() {
   await writeFile(join(dir, 'package.json'), JSON.stringify({ version: '0.0.3' }));
   await mkdir(join(dir, 'src/nested'), { recursive: true });
   await writeFile(join(dir, 'src/nested/program.ts'), 'export const answer = 42;\n');
+  await mkdir(join(dir, 'src/routes'));
+  for (const route of ['+layout.svelte', '+layout.ts', '+page.svelte']) {
+    await writeFile(join(dir, 'src/routes', route), `// Tracked SvelteKit route: ${route}\n`);
+  }
   await writeFile(join(dir, 'run.sh'), '#!/bin/sh\necho source\n', { mode: 0o755 });
   git('add', '.'); git('update-index', '--chmod=+x', 'run.sh'); git('commit', '-qm', 'Fixture');
   const expectedHead = git('rev-parse', 'HEAD'), buildDir = join(dir, 'build');
@@ -43,6 +47,9 @@ describe('exact corresponding source', () => {
     const provenance = JSON.parse(entries.find(entry => entry.path === 'PROVENANCE.json')!.bytes.toString());
     expect(provenance.tree).toBe(git('rev-parse', 'HEAD^{tree}'));
     expect(entries.filter(entry => entry.path.startsWith('project/')).length).toBe(git('ls-files').split('\n').length);
+    for (const route of ['+layout.svelte', '+layout.ts', '+page.svelte']) {
+      expect(entries.some(entry => entry.path === `project/src/routes/${route}`)).toBe(true);
+    }
     const extract = join(dir, 'build/extracted'); await mkdir(extract);
     const tar = spawnSync('tar', ['-xzf', path, '-C', extract]); expect(tar.status).toBe(0);
     for (const file of provenance.files) {
