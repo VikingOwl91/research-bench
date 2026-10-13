@@ -4,6 +4,9 @@ const fixture = (name: string) => resolve('tests/fixtures', name);
 const endpoint = /https:\/\/(api\.eu\.mistral\.ai|openrouter\.ai)\/.*chat\/completions/;
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'POST,OPTIONS' };
 const dummyKeys = { mistral: 'test-only-mistral-key', openrouter: 'test-only-openrouter-key' };
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('researchbench:locale', 'de'));
+});
 async function importFiles(page: Page, names: string[]) {
   await page.locator('#source-upload').setInputFiles(names.map(fixture));
   for (const name of names) await expect(page.locator('.source-open').filter({ hasText: name })).toBeVisible({ timeout: 180_000 });
@@ -240,7 +243,7 @@ test('invalid citations and quota errors cannot create answers; cancellation dro
 
 test('transient local model failure can be retried through a fresh actual Worker', async ({ page }) => {
   let modelReads = 0;
-  await page.route('**/models/multilingual-e5-small/onnx/model_quantized.onnx', async route => {
+  await page.route('**/models/*/multilingual-e5-small/onnx/model_quantized.onnx', async route => {
     modelReads++;
     if (modelReads === 1) await route.abort('failed');
     else await route.continue();
@@ -262,7 +265,7 @@ test('cancel during cold model download publishes no source and a new import suc
   let modelReads = 0;
   let release!: () => void;
   const held = new Promise<void>(resolve => release = resolve);
-  await page.route('**/models/multilingual-e5-small/onnx/model_quantized.onnx', async route => {
+  await page.route('**/models/*/multilingual-e5-small/onnx/model_quantized.onnx', async route => {
     modelReads++;
     if (modelReads === 1) { await held; await route.continue().catch(() => {}); }
     else await route.continue();

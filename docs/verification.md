@@ -1,55 +1,118 @@
-# Local acceptance — 12 October 2026
+# Verification and release acceptance
 
-The application was implemented and checked locally. This report covers local
-v0.0.1 acceptance; deployment and live provider acceptance are separate gates.
+## Reproduce the automated checks
 
-## Executed checks
+Use the pinned Node, pnpm and Rust versions in the workflow and toolchain file.
+Run from the repository root:
 
-| Check | Result |
-| --- | --- |
-| `RUSTC_WRAPPER= pnpm verify` | Passed: typecheck, unit tests, Rust tests, static production build |
-| Svelte/TypeScript diagnostics | 0 errors, 0 warnings |
-| Vitest | 86 tests passed across 5 suites |
-| Rust unit tests | 6 passed |
-| `CI=1 pnpm test:e2e` | 10 passed: 5 Chromium and 5 Firefox, 3.0 minutes |
-| Pinned local assets | All 21 SHA256 hashes verified; complete asset set approximately 217 MiB |
+```sh
+pnpm install --frozen-lockfile
+pnpm assets:prepare
+pnpm assets:prepare -- --verify
+pnpm wasm:build
+pnpm verify
+pnpm exec playwright install chromium firefox
+pnpm test:e2e
+pnpm test:security
+```
 
-Browser acceptance exercises actual Rust/Pdfium PDF extraction and quantized E5
-embeddings, DE/EN retrieval, exact source highlights, persistence and notebook
-isolation. It also covers source rejection, unsafe source text, generation
-coverage, source revisions, cancellation, deletion and recovery after a failed
-model download. A cold model load makes one ONNX request; reload reuses the cache.
-Desktop, source, Studio and mobile screenshots were visually inspected.
+`verify` includes Svelte/TypeScript diagnostics, unit tests, native Rust tests
+and the static production build. Browser tests use fresh, isolated Chromium and
+Firefox profiles. They do not access an existing user tab or its API keys.
+Provider endpoints are intercepted with original synthetic fixtures and dummy
+keys; no real provider requests or spending are needed.
 
-The Mistral and OpenRouter requests were intercepted with fixture responses and
-dummy keys. Tests verify endpoint selection, request bodies, privacy flags,
-schema/citation validation, all three generators, rate-limit handling and
-discarding late responses. They do not verify live provider entitlements,
-regional model availability, billing or actual generated answer quality.
+## Covered behavior
 
-The v0.0.1 Study Guide regression reproduces the former failure with thirteen
-valid transmitted citations. Request and local validation now share size bounds;
-the citation count follows the transmitted context instead of a fixed limit of
-twelve. The tests also reject empty or oversized answers with payload-free
-diagnostics. The exact constraint violated by the user's original live response
-was not inspected, so live retry is still required.
+- Actual Rust/PDFium parsing, local multilingual E5 indexing and retrieval,
+  exact source spans, cancellation/retry, persistence and notebook isolation.
+- Both chat adapters, Summary/FAQ/Study Guide schemas, context membership,
+  source revisions, malformed responses and safe error messages.
+- English interface defaults, persisted German selection, language changes
+  during operations, unchanged stored source names and audio playback.
+- Podcast scripting, WAV/PCM/MP3 decoding, resampling, gain, the production MP3
+  encoder Worker, playback/seek/download and contribution-level timestamps.
+- Atomic audio/metadata publication, quota rollback, stale render identities,
+  key removal/replacement and provider changes during generation, resume and
+  multi-tab locking, including release when the owning tab closes.
+- Malicious documents, filenames and generated text; fabricated citations;
+  session-key lifecycle and wipe; bounded voice pagination/audio payloads.
+- Actual document HTTP CSP plus early hashed meta CSP, worker response policy,
+  permitted WASM execution in Workers, and denied main-thread WASM, evaluation,
+  arbitrary inline scripts, blob Workers and framing.
 
-The browser regression exercises both API adapters with a thirteen-reference
-guide, verifies every linked span and restores the artifact after reload. The
-data-wipe assertion checks ResearchBench-owned records and caches while
-preserving an independent session-storage entry. API responses remain mocked.
+The instrumented runtime check also runs the unchanged production pipeline.
+Rust, PDFium and ONNX compile in the pipeline Worker; the audio encoder is
+JavaScript and needs no additional WASM permission. Zod is configured without
+JIT before constructing schemas, avoiding dynamic-code probes under CSP.
 
-The Firefox regression originally stalled during model downloading. With the
-normal binary download path, its cold real-pipeline test completed in 12.4 seconds.
-This is a local measurement, not a performance guarantee for other hardware or
-network conditions.
+The large-model HTTP-cache test uses owned persistent browser profiles with an
+explicit cache budget. This demonstrates the immutable URL/cache contract,
+not guaranteed retention in every default browser profile. CacheStorage reuse
+is tested separately. Browser eviction or user deletion can require another
+model download.
 
-## Remaining manual submission gates
+Expected HTTP-error console entries are matched to the exact mocked endpoint
+and status in failure-path tests. Other console errors, unhandled exceptions,
+unexpected network requests and unexpected CSP violations fail acceptance.
+Successful hosting flows require zero such errors.
 
-- Enter a funded, user-owned key and test real grounded chat and each generator.
-- Publish the complete static build to the chosen HTTPS host and check its MIME
-  types, SPA fallback, import speed and API access from the deployed origin.
-- Record the demo in at most ten minutes and provide the repository, live demo
-  and video links in the application reply.
+## Exact-source production artifact
 
-WebLLM/WebGPU generation remains an optional bonus and is not implemented.
+Build from a clean committed checkout. Supply its full commit SHA when freezing
+and verifying the candidate:
+
+```sh
+pnpm build
+pnpm release:prepare build .cache/releases --require-clean --expected-head <full-commit-SHA>
+pnpm release:verify <release-directory> --require-clean --expected-head <full-commit-SHA>
+pnpm hosting:check --url <https-origin> --release <release-directory>
+RESEARCHBENCH_HOSTING_URL=<https-origin> pnpm test:hosting
+```
+
+Strict release checks bind provenance and the compiled SvelteKit version to that
+SHA and reject dirty source, stale builds or altered site bytes. The hosting
+checker streams every file and verifies lengths, hashes, MIME/cache/security
+headers, effective policy intersections, SPA navigation and missing-asset 404s.
+The browser suite exercises actual parsing, embeddings, generation fixtures,
+audio playback/download and security denials on the selected hosting origin.
+It does not weaken certificate validation.
+
+## Reproducibility and rollback gates
+
+A release candidate is built twice in independent clean checkouts of the same
+SHA with pinned tools and assets. Compare the site manifests and file bytes;
+informational preparation timestamps are not part of that comparison.
+Identical bootstrap hashes are expected when the builds are deterministic.
+
+Rollback uses two different, fully checked commits: a hardened baseline and the
+new release candidate. Rehearse baseline → candidate → deliberately broken CSP
+→ baseline → candidate in an isolated production-server environment. The broken
+policy is never installed on the public demo. After rollback, repeat the exact
+artifact, security and functional checks, including fresh browser contexts.
+An already loaded document retains its original CSP after a server rollback;
+verify that navigation/new contexts receive the restored policy.
+
+The release tag labels the exact commit whose artifact passed live acceptance.
+CI success, a prepared artifact and a deployed release are separate results.
+Deployment configuration and private operational receipts are outside this
+repository.
+
+## Manual acceptance and limits
+
+The owner accepted the English voice probe and the podcast feature. German
+voices retain a noticeable accent and remain explicitly experimental; local
+speed/gain changes do not provide native German voices. Full real-voice episode
+quality, transitions, pronunciation and live account routing/billing require
+listening with a user-owned key. Automated synthetic tones cannot establish
+those properties.
+
+ResearchBench grounds output in supplied sources; it does not independently
+fact-check them. Prompt injection can still influence generated wording even
+though output is escaped, citations are validated and the key is absent from
+prompt content. Claims of source truth or automatic GDPR compliance are outside
+this acceptance scope.
+
+Before submitting, check the actual public origin and real-provider experience,
+record the demo in at most ten minutes, then provide the repository, demo and
+video links. Optional WebLLM/WebGPU generation is not implemented.

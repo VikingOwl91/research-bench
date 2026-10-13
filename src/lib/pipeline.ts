@@ -1,3 +1,5 @@
+import { localizedError } from './i18n/message';
+import { localizedProgress, runtimeErrorDescriptor } from './i18n/runtime-errors';
 import type { PageText, Progress, SourceKind } from './types';
 import type { StoredChunk } from './storage';
 
@@ -15,7 +17,7 @@ export class LocalPipeline {
   }
   private request<T>(type: 'index' | 'search', payload: unknown, signal: AbortSignal, onProgress: (progress: Progress) => void, transfer: Transferable[] = []): Promise<T> {
     if (signal.aborted) return Promise.reject(new DOMException('Abgebrochen', 'AbortError'));
-    if (this.active) return Promise.reject(new Error('Eine lokale Verarbeitung läuft bereits.'));
+    if (this.active) return Promise.reject(localizedError('runtime.pipelineAlreadyRunning'));
     this.worker ??= new Worker(new URL('./pipeline.worker.ts', import.meta.url), { type: 'module' });
     const worker = this.worker;
     const id = ++this.sequence;
@@ -33,7 +35,7 @@ export class LocalPipeline {
       };
       const abort = () => this.cancel();
       const timer = setTimeout(() => {
-        finish(new Error('Die lokale Verarbeitung dauert länger als fünf Minuten. Bitte verwende eine kleinere Quelle.'));
+        finish(localizedError('runtime.pipelineTimeout'));
         worker.terminate();
         if (this.worker === worker) this.worker = null;
       }, 300_000);
@@ -41,18 +43,20 @@ export class LocalPipeline {
       signal.addEventListener('abort', abort, { once: true });
       worker.onmessage = event => {
         if (event.data.id !== id) return;
-        if (event.data.progress) onProgress(event.data.progress);
+        if (event.data.progress) onProgress(localizedProgress(event.data.progress));
         else if (event.data.error) {
           // Initialization errors can leave ONNX/Pdfium promises or runtime state poisoned.
           // A new request gets a fresh Worker, while successful asset caches remain reusable.
           worker.terminate();
           if (this.worker === worker) this.worker = null;
-          finish(new Error(event.data.error));
+          const descriptor = event.data.errorMessage;
+          const error = descriptor ? localizedError(descriptor.key, descriptor.params) : Object.assign(new Error(event.data.error), { messageRef: runtimeErrorDescriptor(event.data.error) });
+          finish(error);
         }
         else finish(undefined, event.data.result as T);
       };
       worker.onerror = () => {
-        finish(new Error('Der lokale Worker konnte nicht gestartet werden. Bitte prüfe Browser-Unterstützung und statische Assets.'));
+        finish(localizedError('runtime.pipelineWorkerUnavailable'));
         worker.terminate();
         if (this.worker === worker) this.worker = null;
       };

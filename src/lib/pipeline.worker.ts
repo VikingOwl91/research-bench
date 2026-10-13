@@ -1,8 +1,12 @@
 /// <reference lib="webworker" />
+import { localizedProgress, runtimeErrorDescriptor } from './i18n/runtime-errors';
+import { translateMessage } from './i18n/index';
 import { AutoTokenizer, env, pipeline, type FeatureExtractionPipeline, type PreTrainedTokenizer } from '@huggingface/transformers';
 import * as rust from './wasm/research_core.js';
 import { EMBEDDING_VERSION, LIMITS, MODEL_CACHE } from './constants';
 import type { PageText, Progress, SourceKind } from './types';
+
+declare const __MODEL_ASSET_BASE__: string;
 
 interface RawChunk { page: number; start: number; end: number; text: string; }
 interface IndexPayload { bytes: ArrayBuffer; kind: SourceKind; notebookId: string; sourceId: string; remainingChunks: number; remainingCharacters: number; }
@@ -15,7 +19,7 @@ let extractor: FeatureExtractionPipeline;
 let tokenizer: PreTrainedTokenizer;
 let currentId = 0;
 
-function progress(value: Progress) { self.postMessage({ id: currentId, progress: value }); }
+function progress(value: Progress) { self.postMessage({ id: currentId, progress: localizedProgress(value) }); }
 
 function initCore() { return coreReady ??= rust.default().then(exports => { rustExports = exports; }); }
 
@@ -37,7 +41,7 @@ function initModel() {
     progress({ stage: 'Lokales Modell wird geladen', current: 0, total: 0 });
     env.allowRemoteModels = false;
     env.allowLocalModels = true;
-    env.localModelPath = '/models/';
+    env.localModelPath = __MODEL_ASSET_BASE__;
     env.useFS = false;
     env.useFSCache = false;
     env.useBrowserCache = true;
@@ -133,8 +137,7 @@ self.onmessage = async (event: MessageEvent<{ id: number; type: 'index' | 'searc
     const result = event.data.type === 'index' ? await index(event.data.payload as IndexPayload) : await search(event.data.payload as SearchPayload);
     self.postMessage({ id: currentId, result });
   } catch (error) {
-    let message = typeof error === 'string' ? error : error instanceof Error ? error.message : 'Die lokale Verarbeitung ist fehlgeschlagen.';
-    if (message.length > 500) message = 'Die lokale Verarbeitung konnte nicht abgeschlossen werden. Bitte lade die Seite neu und prüfe die Modell-Dateien.';
-    self.postMessage({ id: currentId, error: message });
+    const errorMessage = runtimeErrorDescriptor(error);
+    self.postMessage({ id: currentId, error: translateMessage('de', errorMessage), errorMessage });
   }
 };

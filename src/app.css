@@ -30,3 +30,25 @@
 .progress-banner progress:indeterminate{background:linear-gradient(90deg,#ece3f7 0%,#9873cc 50%,#ece3f7 100%);background-size:200% 100%;animation:progress-pulse 1.5s ease-in-out infinite}
 .progress-banner progress:indeterminate::-webkit-progress-bar{background:transparent}
 @keyframes progress-pulse{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+/* Podcasts retain the Studio's fixed controls and scrollable transcript. */
+.generator-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.generator-tabs button{font-size:8px;min-width:0;gap:6px}
+.podcast-options{display:flex;align-items:center;gap:8px;font-size:10px;color:#887394;margin-bottom:14px;flex-wrap:wrap}
+.podcast-options label{font-weight:550}.podcast-options select,.podcast-player-tools select{background:#fff;border:1px solid #e5ddef;border-radius:5px;padding:6px;color:#725a82;font-size:10px}.podcast-options>span{margin-left:auto;font-size:9px}
+.podcast-voices{border:1px solid #eee7f5;background:#fbf9fd;border-radius:8px;padding:12px;margin-bottom:18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.podcast-voices>span{font-size:10px;display:flex;align-items:center;gap:6px;color:#846194;font-weight:550}.podcast-voices>.text-button{margin-left:auto;font-size:9px}.podcast-voices p{font-size:9px;line-height:1.7;color:#927da0;width:100%}.podcast-probe{width:100%;height:37px;margin-top:5px}
+.podcast-draft{border:1px solid #e9dff3;background:#faf7fd;border-radius:8px;padding:12px;margin-bottom:18px}.podcast-draft .artifact-heading{margin-bottom:8px}.podcast-draft .artifact-heading>span:last-child{font-size:9px;color:#917ba2}.podcast-draft>strong{font-size:11px;font-weight:550;color:#785589}.podcast-draft>p{font-size:9px;color:#8f799d;line-height:1.7;margin-top:6px}.podcast-draft-actions{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.podcast-title{font-size:15px}.podcast-player{background:#faf7fd;border:1px solid #eae2f2;border-radius:9px;padding:10px;margin:0 0 17px}.podcast-player audio{width:100%;height:40px}.podcast-player-tools{display:flex;align-items:center;justify-content:space-between;margin:8px 0 11px;color:#897198;font-size:9px;gap:5px}.podcast-player-tools label{display:flex;align-items:center;gap:5px}.podcast-player>p{font-size:10px;color:#8d739c;line-height:1.7}
+.podcast-turn{padding:10px 8px;margin:0 -8px 8px;border:1px solid transparent;border-radius:7px;transition:background .15s}.podcast-turn.playing{background:#f5eefb;border-color:#e4d5f2}.podcast-turn-seek{border:0;padding:0;background:none;width:100%;justify-content:space-between;margin-bottom:7px;font-size:8px;color:#9b85a9}.podcast-turn-seek:disabled{opacity:1}.podcast-speaker{font-size:9px;color:#82599e;background:#f4edfa;border-radius:4px;padding:3px 6px;font-weight:600}.podcast-speaker.speaker-b{color:#58856d;background:#eef6ef}.podcast-turn p{font-size:11px;line-height:1.9;color:#776381;white-space:pre-wrap;overflow-wrap:anywhere}.podcast-turn .citations{margin-top:6px}.podcast-delete{margin-top:14px}.podcast-generate>p:last-child{font-size:8px}.podcast-empty{padding-top:8px}.podcast-empty .studio-art{margin-bottom:16px}.podcast-empty ul{margin-top:18px}
+@media(max-width:640px){.podcast-options select{font-size:14px}.podcast-player-tools select{font-size:13px}.podcast-voices p,.podcast-draft>p{font-size:10px}}
+.podcast-player .podcast-tempo-note{font-size:8px;color:#927ca2;line-height:1.7;margin-top:8px}
+
+/* The interface language remains available on every viewport and during jobs. */
+.interface-language{display:flex;align-items:center;flex-shrink:0}
+.interface-language select{background:#fff;border:1px solid #ded7e8;border-radius:6px;padding:6px 8px;color:#65576f;font:inherit;font-size:11px;cursor:pointer;max-width:110px}
+.interface-language select:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+@media(max-width:640px){.interface-language select{font-size:14px;padding:6px;max-width:105px}}
+
+.app-footer .repo-link{text-decoration:underline;text-underline-offset:3px}.app-footer .repo-link:hover{color:var(--violet)}
+
+/* Bootstrap wrapper avoids a document inline-style exception. */
+.sveltekit-wrapper{display:contents}

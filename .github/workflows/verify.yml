@@ -17,9 +17,9 @@ jobs:
           version: 11.28.5
       - uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version: 26.11.1
           cache: pnpm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
@@ -32,7 +32,7 @@ jobs:
             static/pdfium
             static/runtime
             .cache/tools
-          key: browser-assets-${{ hashFiles('scripts/assets-manifest.json', 'scripts/build-wasm.mjs') }}
+          key: browser-assets-${{ hashFiles('scripts/assets-manifest.json', 'scripts/model-assets.mjs', 'scripts/build-wasm.mjs') }}
       - run: pnpm install --frozen-lockfile
       - run: node scripts/prepare-assets.mjs
       - run: node scripts/prepare-assets.mjs --verify
@@ -40,6 +40,7 @@ jobs:
       - run: pnpm verify
       - run: pnpm exec playwright install --with-deps chromium firefox
       - run: pnpm test:e2e
+      - run: pnpm test:security
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -3,7 +3,7 @@ import { openDB } from 'idb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BenchStorage, DB_NAME, StorageConflict, type StoredChunk } from '../../src/lib/storage';
 import { EMBEDDING_VERSION } from '../../src/lib/constants';
-import type { Artifact, ChatMessage, Notebook, Source } from '../../src/lib/types';
+import type { TextArtifact, ChatMessage, Notebook, Source } from '../../src/lib/types';
 
 let storage: BenchStorage;
 function ready(notebook: Notebook, id = crypto.randomUUID()): { source: Source; chunks: StoredChunk[] } {
@@ -15,7 +15,7 @@ function ready(notebook: Notebook, id = crypto.randomUUID()): { source: Source; 
 function message(n: Notebook, revision: number): ChatMessage {
   return { id: crypto.randomUUID(), notebookId: n.id, revision, createdAt: 10, role: 'user', text: 'Eine Frage', citations: [] };
 }
-function artifact(n: Notebook, revision: number): Artifact {
+function artifact(n: Notebook, revision: number): TextArtifact {
   return { id: crypto.randomUUID(), notebookId: n.id, revision, createdAt: 20, kind: 'summary', answer: { title: 'Zusammenfassung', blocks: [{ text: 'Text', citationIds: [] }] }, citations: [], coverage: { selectedCharacters: 0, totalCharacters: 0, selectedSources: 0, totalSources: 0, limited: false }, provider: 'mistral', model: 'test' };
 }
 beforeEach(async () => { storage = new BenchStorage(); await storage.clear(); });
@@ -166,7 +166,7 @@ describe('source revisions, isolation and deletion', () => {
   it('rejects an old embedding version and wrong vector dimension at retrieval after reload', async () => {
     const n = await storage.createNotebook('Notebook');
     const data = ready(n); await storage.saveSource(data.source, data.chunks, 0);
-    const db = await openDB(DB_NAME, 1);
+    const db = await openDB(DB_NAME, 2);
     await db.put('chunks', { ...data.chunks[0], embeddingVersion: 'obsolete-model' });
     await expect(storage.chunks(n.id)).rejects.toThrow(/Modellversion/);
     await db.put('chunks', { ...data.chunks[0], vector: new Float32Array(100) });
