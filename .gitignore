@@ -7,7 +7,9 @@ target/
 test-results/
 playwright-report/
 static/models/
-static/runtime/
+static/runtime/*
+!static/runtime/LGPL-3.0.txt
+!static/runtime/GPL-3.0.txt
 static/pdfium/
 src/lib/wasm/
 .env*

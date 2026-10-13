@@ -5,7 +5,8 @@ model/runtime assets retain their upstream licenses and notices.
 
 `scripts/assets-manifest.json` records exact revisions, SHA256 digests, download
 URLs, sizes and license sources. `pnpm assets:prepare` ships the corresponding
-notices with the statically deployed assets. The model namespace digest is
+notices with the statically deployed assets. The exact pinned LGPL/GPL license
+texts are also committed so builds do not depend on access to the GNU website. The model namespace digest is
 derived from its pinned file inventory; the release manifest identifies the
 exact deployed notice paths:
 
