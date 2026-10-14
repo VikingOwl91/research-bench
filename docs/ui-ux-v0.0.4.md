@@ -129,3 +129,45 @@ The owned temporary directory avoids a quota problem in the shared system tempor
 ## Decision
 
 Local UI/theme milestone **READY**. No confirmed P0/P1 defect remains. Full WCAG certification and real-device acceptance are not claimed. GitHub visibility was checked as PRIVATE; HEAD and `v0.0.3` still resolve to the baseline. At completion of the implementation review, no commit, push, new tag, publication or deployment had been performed and production v0.0.3 was unchanged. The subsequent final release is separately authorized; preserve its signed v0.0.3 tag and rollback artifact.
+
+## Firefox release-blocker correction
+
+The first release candidate (`2e999ff`) passed locally but failed the Firefox
+200% text-resizing test in CI at the first 320×900 viewport, before any dialog
+opened. The trace records Playwright 1.64.0, Firefox 157.0 and DPR 1. The original
+trace does not record the resolved font or numeric overflow geometry.
+
+An isolated Ubuntu 24.04 reproduction with the same Playwright/Firefox versions
+and DejaVu Sans fallback reproduces the original test failure without changing
+its assertion. Firefox's default fallback produces a 339px document at a 320px
+viewport; Chromium's default passes. Explicit DejaVu Sans reproduces the same
+defect in both engines, so this is a font-sensitive layout defect, not a relaxed
+measurement requirement. The original CI font selection cannot be proved
+retroactively from its trace; the controlled reproduction establishes the
+mechanism without claiming a complete replica of the hosted runner image.
+
+Two enlarged text elements exceed their available width:
+
+- The brand box is correctly capped at 296px, starting at x=12, but its no-wrap
+  wordmark retains intrinsic width and ends at x=339.05. Allowing only this child
+  to shrink and wrap reduces document width from 339px to 326px.
+- The centered empty-state heading has an unbreakable word and intrinsic width
+  331.5px, spanning x=−5.75 to x=325.75. Capping its width and allowing word breaks
+  reduces document width to exactly 320px. Restoring the original styles restores
+  the 339px overflow.
+
+The correction touches only these two selectors. It preserves enlarged text,
+normal-size styling, controls and document scrolling. No global overflow hiding,
+assertion tolerance, skipped test or generation behavior is introduced.
+The existing test now covers default and DejaVu Sans fallback at all six widths;
+failures attach scrollWidth/clientWidth/innerWidth/DPR and offending rectangles.
+
+Reproduce the focused regression against a production build:
+
+```sh
+pnpm build
+pnpm exec playwright test tests/e2e/appearance.spec.ts --grep '200% text resizing'
+```
+
+The complete verification and exact-commit CI remain separate release gates;
+passing the focused reproduction alone does not authorize a release claim.

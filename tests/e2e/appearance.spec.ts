@@ -23,7 +23,25 @@ async function scan(page: Page, state: string) {
   expect(result.violations.map(item => ({ id: item.id, nodes: item.nodes.map(node => node.target) })), state).toEqual([]);
 }
 async function noOverflow(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'horizontal page overflow').toBe(true);
+  const metrics = await page.evaluate(() => {
+    const root = document.documentElement;
+    return {
+      scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, innerWidth, devicePixelRatio,
+      font: getComputedStyle(root).font,
+      overflowing: root.scrollWidth <= innerWidth ? [] : Array.from(document.querySelectorAll('body *')).flatMap(node => {
+        const rect = node.getBoundingClientRect(), style = getComputedStyle(node);
+        return rect.width && rect.height && rect.right > innerWidth ? [{
+          tag: node.tagName, class: node.getAttribute('class'), rect: rect.toJSON(),
+          font: style.font, minWidth: style.minWidth, maxWidth: style.maxWidth,
+          whiteSpace: style.whiteSpace, overflowWrap: style.overflowWrap
+        }] : [];
+      })
+    };
+  });
+  if (metrics.scrollWidth > metrics.innerWidth) {
+    await test.info().attach('overflow-geometry', { body: JSON.stringify(metrics, null, 2), contentType: 'application/json' });
+  }
+  expect(metrics.scrollWidth <= metrics.innerWidth, `horizontal page overflow: ${JSON.stringify(metrics)}`).toBe(true);
 }
 
 test('saved preference applies before delayed app bootstrap; System follows OS without reload', async ({ page }) => {
@@ -166,20 +184,24 @@ test('200% text resizing keeps header controls separate and forms within the vie
   await ready(page);
   // CSS-root text scaling stresses rem-based controls separately from the zoom/reflow check.
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-  for (const width of [320, 375, 430, 768, 1280, 1920]) {
-    await page.setViewportSize({ width, height: 900 });
-    await noOverflow(page);
-    expect(await page.evaluate(() => {
-      const brand = document.querySelector('.brand')!.getBoundingClientRect();
-      const actions = document.querySelector('.header-actions')!.getBoundingClientRect();
-      return brand.right <= actions.left || brand.bottom <= actions.top || actions.bottom <= brand.top;
-    }), `overlapping header at ${width}px with 200% text`).toBe(true);
-    await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
-    await noOverflow(page);
-    expect(await page.locator('.settings-dialog').evaluate(node => node.getBoundingClientRect().height <= innerHeight)).toBe(true);
-    await page.getByLabel('Appearance', { exact: true }).selectOption('dark');
-    await page.getByRole('button', { name: 'Close settings' }).click();
-    await page.screenshot({ path: `.cache/ui-v004/after/${test.info().project.name}-text200-${width}.png`, fullPage: true });
+  // Ubuntu Firefox's wider fallback reproduces overflow hidden by local defaults.
+  for (const font of ['default', 'DejaVu Sans']) {
+    await page.evaluate(font => { document.documentElement.style.fontFamily = font === 'default' ? '' : '"DejaVu Sans", sans-serif'; }, font);
+    for (const width of [320, 375, 430, 768, 1280, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await noOverflow(page);
+      expect(await page.evaluate(() => {
+        const brand = document.querySelector('.brand')!.getBoundingClientRect();
+        const actions = document.querySelector('.header-actions')!.getBoundingClientRect();
+        return brand.right <= actions.left || brand.bottom <= actions.top || actions.bottom <= brand.top;
+      }), `overlapping header at ${width}px with 200% text`).toBe(true);
+      await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      await noOverflow(page);
+      expect(await page.locator('.settings-dialog').evaluate(node => node.getBoundingClientRect().height <= innerHeight)).toBe(true);
+      await page.getByLabel('Appearance', { exact: true }).selectOption('dark');
+      await page.getByRole('button', { name: 'Close settings' }).click();
+      await page.screenshot({ path: `.cache/ui-v004/after/${test.info().project.name}-text200-${font}-${width}.png`, fullPage: true });
+    }
   }
 });

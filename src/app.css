@@ -224,6 +224,7 @@ audio { color-scheme: inherit; max-width: 100%; }
   background: var(--accent-subtle);
 }
 .brand-light { font-weight: 440; }
+.brand > span:last-child { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .brand-dot { color: var(--accent-text); margin-left: 1px; }
 .header-center, .workspace-note {
   display: flex;
@@ -396,7 +397,7 @@ audio { color-scheme: inherit; max-width: 100%; }
 .illustration-spark { position: absolute; right: -9px; top: -8px; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: var(--surface); border: 1px solid var(--accent-border); border-radius: 9px; color: var(--accent-text); transform: rotate(15deg); }
 .orbit-dot { position: absolute; left: -17px; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-border); }
 .research-empty > .eyebrow { margin-bottom: 10px; }
-.research-empty > h2 { margin-bottom: 12px; font-size: clamp(1.4375rem, 2vw, 1.8125rem); font-weight: 560; letter-spacing: -0.7px; line-height: 1.35; }
+.research-empty > h2 { max-width: 100%; overflow-wrap: anywhere; margin-bottom: 12px; font-size: clamp(1.4375rem, 2vw, 1.8125rem); font-weight: 560; letter-spacing: -0.7px; line-height: 1.35; }
 .research-empty > p { font-size: 0.9375rem; line-height: 1.8; color: var(--text-secondary); }
 .suggestion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 550px; margin-top: 26px; }
 .suggestion-grid button { display: grid; grid-template-columns: minmax(0, 1fr) 16px; gap: 6px; justify-items: start; text-align: left; padding: 15px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--accent-text); }
