@@ -609,6 +609,22 @@ dialog::backdrop { background: var(--backdrop); backdrop-filter: blur(4px); }
 
 
 @media (min-width: 1101px) {
+  /* Keep the desktop workspace in the window; each pane owns its long content. */
+  .app-shell { width: 100%; max-width: none; height: calc(100dvh - env(safe-area-inset-top)); display: flex; flex-direction: column; }
+  .app-header, .app-footer { flex: 0 0 auto; }
+  .app-header { min-height: 72px; }
+  .app-footer { padding-block: 8px max(12px, env(safe-area-inset-bottom)); }
+  .app-shell > main { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
+  .workspace-heading { flex-shrink: 0; padding-block: 20px 18px; }
+  .workspace-feedback { flex-shrink: 0; }
+  .workspace { flex: 1 0 16rem; min-height: 16rem; height: auto; max-height: none; }
+  .panel { min-height: 0; }
+  /* Keep visually hidden input/label bounds inside their own scroll containers. */
+  .dropzone, .composer { position: relative; }
+  .research-panel { overflow-y: auto; }
+  .research-feed { flex: 1 0 8rem; min-height: 8rem; }
+  .source-viewer { min-height: 20rem; overflow-y: auto; }
+  .studio-content { flex: 1 1 0; min-height: 8rem; }
   .research-empty { padding-block: 12px; }
   .empty-illustration { width: 72px; height: 72px; margin-bottom: 16px; }
   .research-empty > .eyebrow { margin-bottom: 8px; }

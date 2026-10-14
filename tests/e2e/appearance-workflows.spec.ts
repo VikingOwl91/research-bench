@@ -61,6 +61,18 @@ async function answer(route: Route, title = fixtureTitle) {
 
 async function evidence(page: Page, state: string) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${state}: horizontal page overflow`).toBe(true);
+  if (page.viewportSize()!.width > 1100) {
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), `${state}: vertical page overflow`).toBe(true);
+    // Generated text and source pages must remain reachable inside their own regions.
+    const region = page.locator('.source-scroll:visible, .research-feed:visible, .studio-content:visible');
+    for (const content of await region.all()) {
+      await content.focus();
+      await page.keyboard.press('Control+End');
+      await expect.poll(() => content.evaluate(node => node.scrollHeight - node.clientHeight - node.scrollTop)).toBeLessThanOrEqual(1);
+      expect(await page.evaluate(() => scrollY), `${state}: pane scrolling moved the document`).toBe(0);
+      await content.evaluate(node => node.scrollTop = 0);
+    }
+  }
   await page.evaluate(axeSource);
   const report = await page.evaluate(async () => (window as any).axe.run(document, {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'] }
@@ -92,6 +104,7 @@ test('appearance changes preserve a held real indexing job and its subsequent he
   await upload(page);
   await expect.poll(() => !!model).toBe(true);
   await expect(page.locator('.progress-banner')).toContainText('Loading local model');
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), 'indexing feedback must fit the desktop window').toBe(true);
   await appearance(page, 'dark');
   await appearance(page, 'light');
   await expect(page.locator('.progress-banner')).toContainText('Loading local model');
@@ -111,6 +124,7 @@ test('appearance changes preserve a held real indexing job and its subsequent he
   const originalRequest = JSON.stringify(requests[0]);
   await appearance(page, 'dark');
   await expect(page.locator('.progress-banner')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), 'generation feedback must fit the desktop window').toBe(true);
   await expect(page.locator('#question')).toBeDisabled();
   expect(requests).toHaveLength(1);
   expect(JSON.stringify(requests[0])).toBe(originalRequest);
@@ -124,7 +138,7 @@ test('appearance changes preserve a held real indexing job and its subsequent he
   expect(requests).toHaveLength(1);
 });
 
-test('filled workflows keep audio identity while themes change and render accessible long-name citations at three widths', async ({ page }) => {
+test('filled workflows keep audio identity while themes change and render accessible long-name citations at mobile, tablet and desktop widths', async ({ page }) => {
   test.setTimeout(420_000);
   const errors: string[] = [], unexpected: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -197,8 +211,8 @@ test('filled workflows keep audio identity while themes change and render access
 
   for (const theme of ['light', 'dark'] as const) {
     await appearance(page, theme);
-    for (const width of [320, 768, 1280]) {
-      await page.setViewportSize({ width, height: width === 320 ? 844 : 1000 });
+    for (const width of [320, 768, 1280, 1920]) {
+      await page.setViewportSize({ width, height: width === 320 ? 844 : width === 1280 ? 720 : 1000 });
       await pane(page, 'Research');
       await page.locator('.research-tabs').getByRole('button', { name: 'Chat', exact: true }).click();
       await page.locator('.research-feed').evaluate(node => node.scrollTop = 0);
@@ -214,7 +228,6 @@ test('filled workflows keep audio identity while themes change and render access
         await expect(page.locator('.studio-content .answer-title')).toBeVisible();
         await page.locator('.studio-content').evaluate(node => node.scrollTop = 0);
         await evidence(page, `${theme}-${width}-filled-${tab.toLowerCase()}`);
-        if (width > 1100) expect(await page.evaluate(() => document.documentElement.scrollHeight <= Math.max(innerHeight, document.body.getBoundingClientRect().bottom + scrollY) + 2), 'clipped transcript labels must not create blank page scroll').toBe(true);
       }
     }
   }
