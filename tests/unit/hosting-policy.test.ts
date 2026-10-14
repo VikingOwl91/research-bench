@@ -77,6 +77,15 @@ describe('CSP artifact and hosting boundaries', () => {
     expect(() => validateDocumentPolicy(html().replace('<link', `<meta http-equiv="content-security-policy" content="${meta()}"><link`), DOCUMENT_HEADER_CSP)).toThrow();
     expect(() => validateDocumentPolicy(html().replace('<script>', '<script src="https://openrouter.ai/app.js">'), DOCUMENT_HEADER_CSP)).toThrow();
   });
+  it('allows only the exact same-origin appearance initializer after the CSP meta', () => {
+    const withInitializer = html().replace('<link', '<script src="/theme-init.js"></script><link');
+    expect(validateDocumentPolicy(withInitializer, DOCUMENT_HEADER_CSP).bootstrapHashes).toEqual([`'${bootstrapHash}'`]);
+    expect(() => validateDocumentPolicy(withInitializer, `${DOCUMENT_HEADER_CSP}, script-src 'none'`)).toThrow(/script-src-elem/);
+    expect(() => validateDocumentPolicy(html().replace('<meta http-equiv', '<script src="/theme-init.js"></script><meta http-equiv'), DOCUMENT_HEADER_CSP)).toThrow(/immediately follow charset/);
+    for (const src of ['theme-init.js', '/theme-init.js?mode=dark', '/theme-init.js/extra', '/other.js', '//researchbench.invalid/theme-init.js', 'https://researchbench.invalid/theme-init.js', 'https://openrouter.ai/theme-init.js']) {
+      expect(() => validateDocumentPolicy(withInitializer.replace('/theme-init.js', src), DOCUMENT_HEADER_CSP)).toThrow(/Unapproved script URL/);
+    }
+  });
   it('recognizes only actual worker entry points and versioned model caching', () => {
     expect(isWorkerPath('/_app/immutable/workers/pipeline.worker-aBc12.js')).toBe(true);
     expect(isWorkerPath('_app/immutable/workers/encoder.worker-abc.js')).toBe(true);

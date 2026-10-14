@@ -1,6 +1,11 @@
 import type { CatalogEntry } from './index';
 
 export const pageMessages = {
+  "page.appearance": {"en": "Appearance", "de": "Darstellung"},
+  "page.themeSystem": {"en": "System", "de": "System"},
+  "page.themeLight": {"en": "Light", "de": "Hell"},
+  "page.themeDark": {"en": "Dark", "de": "Dunkel"},
+  "page.skipWorkspace": {"en": "Skip to workspace", "de": "Zum Arbeitsbereich springen"},
   "page.summaryTitle": {"en": "Summary", "de": "Zusammenfassung"},
   "page.summaryDescription": {"en": "The key ideas, clearly summarised.", "de": "Die wichtigsten Gedanken, klar auf den Punkt."},
   "page.faqTitle": {"en": "FAQ", "de": "FAQ"},

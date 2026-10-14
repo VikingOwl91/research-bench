@@ -64,7 +64,7 @@ test('paused native MP3 contribution seeks settle inside both speakers and prese
   await expect.poll(() => audio.evaluate((player: HTMLAudioElement) => player.currentTime)).toBeGreaterThan(0.05);
   await audio.evaluate((player: HTMLAudioElement) => player.pause());
   for (const [index, rate] of [[2, 1.2], [3, 1]] as const) {
-    await page.getByRole('button', { name: `Jump to contribution ${index + 1}`, exact: true }).click();
+    await page.getByRole('button', { name: new RegExp(`Jump to contribution ${index + 1}$`) }).click();
     await expect.poll(() => audio.evaluate((player: HTMLAudioElement) => player.seeking)).toBe(false);
     const settled = await audio.evaluate((player: HTMLAudioElement) => ({ time: player.currentTime, paused: player.paused, rate: player.playbackRate }));
     expect(settled.time).toBeGreaterThan(timeline[index].start);
@@ -79,7 +79,7 @@ test('paused native MP3 contribution seeks settle inside both speakers and prese
   await audio.evaluate((player: HTMLAudioElement, gap) => { player.currentTime = gap; }, timeline[2].end + 0.09);
   await expect.poll(() => audio.evaluate((player: HTMLAudioElement) => player.seeking)).toBe(false);
   await expect(page.locator('.podcast-turn.playing')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Jump to contribution 4', exact: true }).click();
+  await page.getByRole('button', { name: /Jump to contribution 4$/ }).click();
   await expect(page.locator('.podcast-turn').nth(3)).toHaveClass(/playing/);
   await page.locator('#interface-language').selectOption('de');
   expect(await audio.evaluate((player, previous) => player === previous, originalPlayer)).toBe(true);

@@ -76,7 +76,7 @@ test('podcast WAV to actual MP3 worker, contribution timeline, download, reload,
   await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => element.duration)).toBeGreaterThan(4);
   await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => element.playbackRate)).toBe(1.2);
   expect(await audio.evaluate((element: HTMLAudioElement) => element.preservesPitch)).toBe(true);
-  await page.getByRole('button', { name: 'Zu Beitrag 3 springen', exact: true }).click();
+  await page.getByRole('button', { name: /Zu Beitrag 3 springen$/ }).click();
   await expect(page.locator('.podcast-turn').nth(2)).toHaveClass(/playing/);
   await page.getByLabel('Wiedergabegeschwindigkeit').selectOption('1.5');
   expect(await audio.evaluate((element: HTMLAudioElement) => element.playbackRate)).toBe(1.5);

@@ -9,6 +9,7 @@
   export let onClose: () => void;
   let pageNumber = citation?.page ?? source.pages[0]?.page ?? 1;
   let marker: HTMLElement | undefined;
+  let heading: HTMLElement;
   // The parent remounts this viewer for every explicit selection, including re-clicks.
   // Citation IDs are request-local and cannot identify a navigation event.
   onMount(() => { void focusMark(); });
@@ -16,14 +17,14 @@
   $: validSpan = !!(page && citation && citation.page === pageNumber && citation.start >= 0 && citation.end > citation.start && citation.end <= page.text.length && page.text.slice(citation.start, citation.end) === citation.text);
   async function focusMark() {
     await tick();
-    marker?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    marker?.focus({ preventScroll: true });
+    marker?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    (marker ?? heading)?.focus({ preventScroll: true });
   }
 </script>
 
-<div class="source-viewer">
+<div id="research-content" class="source-viewer">
   <header class="viewer-header">
-    <div class="viewer-title"><div class="file-icon"><FileText size={19}/></div><div><strong><bdi>{displaySourceName(source.name)}</bdi></strong><span>{$t(source.pages.length === 1 ? 'components.viewer.description.one' : 'components.viewer.description.many', { count: source.pages.length })}</span></div></div>
+    <div class="viewer-title" tabindex="-1" bind:this={heading}><div class="file-icon"><FileText size={19}/></div><div><strong><bdi>{displaySourceName(source.name)}</bdi></strong><span>{$t(source.pages.length === 1 ? 'components.viewer.description.one' : 'components.viewer.description.many', { count: source.pages.length })}</span></div></div>
     <button class="icon-button" onclick={onClose} aria-label={$t('components.viewer.close')}><X size={18}/></button>
   </header>
   <div class="page-navigation">
@@ -33,7 +34,8 @@
   {#if citation}
     <div class="source-notice"><ArrowUpRight size={15}/><span>{$t(validSpan ? 'components.viewer.highlight' : 'components.viewer.noHighlight')}</span></div>
   {/if}
-  <div class="source-scroll">
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable content needs keyboard access even without enabled descendant controls.) -->
+<div class="source-scroll" tabindex="0" role="region" aria-label={$t('components.viewer.heading')}>
     <article class="source-paper">
       <div class="paper-heading"><span><bdi>{displaySourceName(source.name)}</bdi></span><span>{String(pageNumber).padStart(2, '0')}</span></div>
       {#if page}

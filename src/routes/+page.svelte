@@ -8,6 +8,8 @@
   import { displaySearchSnippet } from '#lib/display-search-snippet.ts';
   import { serializeRetrievalContext } from '#lib/retrieval-context-export.ts';
   import { onMount, tick } from 'svelte';
+  import { themePreference, setThemePreference } from '#lib/theme.ts';
+  import { modalKeyboard } from '#lib/dialog.ts';
   import { BookOpen, Plus, ChevronDown, ArrowUp, ArrowRight, MessageSquare, Search, FileText, Upload, X, Settings2, ShieldCheck, Sparkles, GraduationCap, PanelLeft, Trash2, Pencil, Check, LoaderCircle, CircleHelp, CheckCircle2, AlertCircle, Square, NotebookPen, Headphones, Download } from 'lucide-svelte';
   import { ResearchBenchController } from '#lib/controller.ts';
   import { locale, t, initializeLocale, setLocale } from '#lib/i18n/store.ts';
@@ -30,6 +32,9 @@
   let selectedSource: Source | null = null;
   let selectedCitation: Citation | undefined;
   let sourceSelectionVersion = 0;
+  let sourceReturnTab: 'chat' | 'search' = 'chat';
+  let sourceReturnControl: HTMLElement | null = null;
+  let sourceReturnText = '';
   let dragging = false;
   let settingsDialog: HTMLDialogElement;
   let confirmDialog: HTMLDialogElement;
@@ -74,7 +79,7 @@
     controller.initialize().then(() => ready = true);
     return () => { unsubscribe(); controller.cancel(); };
   });
-  async function scrollChat() { await tick(); chatFeed?.scrollTo({ top: chatFeed.scrollHeight, behavior: 'smooth' }); }
+  async function scrollChat() { await tick(); chatFeed?.scrollTo({ top: chatFeed.scrollHeight, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); }
   function openSettings() { keyInput = ''; settingsDialog.showModal(); }
   function changeProvider(provider: Provider) { keyInput = ''; controller.setProvider(provider); }
   function saveKey() { if (!keyInput.trim()) return; controller.setKey(keyInput.trim()); keyInput = ''; }
@@ -84,8 +89,18 @@
     else await controller.createNotebook(notebookName.trim());
     notebookName = ''; notebookEditing = null;
   }
-  function beginNotebook(mode: 'create' | 'rename') { notebookEditing = mode; notebookName = mode === 'rename' ? state.activeNotebook?.name ?? '' : ''; mobilePane = 'sources'; }
-  function showSource(source: Source, citation?: Citation) { selectedSource = source; selectedCitation = citation; sourceSelectionVersion += 1; activeTab = 'source'; mobilePane = 'work'; }
+  async function beginNotebook(mode: 'create' | 'rename') { notebookEditing = mode; notebookName = mode === 'rename' ? state.activeNotebook?.name ?? '' : ''; mobilePane = 'sources'; await tick(); document.getElementById('notebook-name')?.focus(); }
+  function showSource(source: Source, citation?: Citation) {
+    if (activeTab !== 'source') sourceReturnTab = activeTab;
+    sourceReturnControl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    sourceReturnText = sourceReturnControl?.textContent ?? '';
+    selectedSource = source; selectedCitation = citation; sourceSelectionVersion += 1; activeTab = 'source'; mobilePane = 'work'; }
+  async function closeSource() {
+    activeTab = sourceReturnTab; await tick();
+    const original = sourceReturnControl;
+    const restored = original?.isConnected && original.getClientRects().length ? original : Array.from(document.querySelectorAll<HTMLElement>('.research-feed button, .source-open')).find(item => item.textContent === sourceReturnText && item.getClientRects().length);
+    (restored ?? document.querySelector<HTMLElement>('.research-tabs button.active'))?.focus();
+  }
   function showCitation(citation: Citation) { const source = state.sources.find((item) => item.id === citation.sourceId); if (source) showSource(source, citation); }
   function exportSourceContext(citations: Citation[]) {
     const url = URL.createObjectURL(new Blob([serializeRetrievalContext(citations)], { type: 'application/json' }));
@@ -115,23 +130,29 @@
 
 <svelte:head><title>{$t('page.documentTitle')}</title><meta name="description" content={$t('page.metaDescription')}/></svelte:head>
 
+<a class="skip-link" href="#workspace">{$t('page.skipWorkspace')}</a>
 <div class="app-shell">
   <header class="app-header">
     <a href="/" class="brand" aria-label={$t('page.home')}><span class="brand-symbol"><BookOpen size={21} strokeWidth={1.8}/></span><span>research<span class="brand-light">bench</span><span class="brand-dot">.</span></span></a>
     <div class="header-center"><span class="status-dot"></span><span>{$t('page.headerTagline')}</span></div>
-    <div class="header-actions"><label class="interface-language" for="interface-language"><span class="visually-hidden">{$t('page.interfaceLanguage')}</span><select id="interface-language" aria-label={$t('page.interfaceLanguage')} value={$locale} onchange={(event) => setLocale(event.currentTarget.value)}><option value="en">English</option><option value="de">Deutsch</option></select></label><span class="version-pill">{$t('page.browserEdition')}</span><button class="settings-trigger" onclick={openSettings} disabled={!ready}><Settings2 size={16}/><span>{$t('page.settings')}</span></button></div>
+    <div class="header-actions"><label class="interface-language" for="interface-language"><span class="visually-hidden">{$t('page.interfaceLanguage')}</span><select id="interface-language" aria-label={$t('page.interfaceLanguage')} value={$locale} onchange={(event) => setLocale(event.currentTarget.value)}><option value="en">English</option><option value="de">Deutsch</option></select></label><span class="version-pill">{$t('page.browserEdition')}</span><button class="settings-trigger" aria-label={$t('page.settings')} onclick={openSettings} disabled={!ready}><Settings2 size={16}/><span>{$t('page.settings')}</span></button></div>
   </header>
 
+  <main id="workspace" tabindex="-1">
   <div class="workspace-heading"><div><div class="eyebrow">{$t('page.workspaceEyebrow')}</div><h1>{$t('page.workspaceTitle')}<span>.</span></h1></div><div class="workspace-note"><ShieldCheck size={16}/><span>{$t('page.localSources')}</span></div></div>
 
-  <nav class="mobile-navigation" aria-label={$t('page.workspaces')}><button class:active={mobilePane === 'sources'} onclick={() => mobilePane = 'sources'}><PanelLeft size={16}/>{$t('page.sources')}</button><button class:active={mobilePane === 'work'} onclick={() => mobilePane = 'work'}><MessageSquare size={16}/>{$t('page.research')}</button><button class:active={mobilePane === 'studio'} onclick={() => mobilePane = 'studio'}><Sparkles size={16}/>{$t('page.studio')}</button></nav>
+  <nav class="mobile-navigation" aria-label={$t('page.workspaces')}><button class:active={mobilePane === 'sources'} aria-pressed={mobilePane === 'sources'} aria-controls="sources-panel" onclick={() => mobilePane = 'sources'}><PanelLeft size={16}/>{$t('page.sources')}</button><button class:active={mobilePane === 'work'} aria-pressed={mobilePane === 'work'} aria-controls="research-panel" onclick={() => mobilePane = 'work'}><MessageSquare size={16}/>{$t('page.research')}</button><button class:active={mobilePane === 'studio'} aria-pressed={mobilePane === 'studio'} aria-controls="studio-panel" onclick={() => mobilePane = 'studio'}><Sparkles size={16}/>{$t('page.studio')}</button></nav>
 
-  <main class="workspace">
-    <aside class="sources-panel panel" class:mobile-visible={mobilePane === 'sources'}>
-      <div class="panel-header"><div class="panel-title"><BookOpen size={17}/><h2>{$t('page.notebooks')}</h2></div><button class="icon-button" onclick={() => beginNotebook('create')} disabled={state.busy || !ready} aria-label={$t('page.createNotebook')} title={$t('page.createNotebook')}><Plus size={18}/></button></div>
+  <div class="workspace-feedback">
+      {#if state.error}<div class="error-banner" role="alert"><AlertCircle size={17}/><span>{#if state.errorMessage && (state.errorMessage.key === 'runtime.fileTooLarge' || state.errorMessage.key === 'runtime.emptyFile')}<bdi>{state.errorMessage.params?.filename}</bdi>{$t(state.errorMessage.key, { ...state.errorMessage.params, filename: '' })}{:else}{state.errorMessage ? $t(state.errorMessage.key, state.errorMessage.params) : $t('runtime.operationFailed')}{/if}</span><button class="icon-button" onclick={() => controller.clearError()} aria-label={$t('page.dismissError')}><X size={15}/></button></div>{/if}
+      {#if state.progress}<div class="progress-banner" role="status" data-stage={state.progress.stage}><LoaderCircle size={17} class="spin"/><div><strong>{state.progress.stageMessage ? $t(state.progress.stageMessage.key, state.progress.stageMessage.params) : $t('runtime.processing')}</strong><span>{#if state.progress.detailMessage?.key === 'runtime.fileProgress'}<bdi>{state.progress.detailMessage.params?.filename}</bdi>{$t(state.progress.detailMessage.key, { ...state.progress.detailMessage.params, filename: '' })}{:else}{state.progress.detailMessage ? $t(state.progress.detailMessage.key, state.progress.detailMessage.params) : (state.progress.total > 0 ? $t('page.progressCount', { current: state.progress.current, total: state.progress.total }) : $t('page.justAMoment'))}{/if}</span>{#if state.progress.total > 0}<progress aria-label={$t('page.processing')} max={state.progress.total} value={state.progress.current}></progress>{:else}<progress aria-label={$t('page.processing')}></progress>{/if}</div><button class="text-button" onclick={() => controller.cancel()}><Square size={12}/>{$t('page.cancel')}</button></div>{/if}
+  </div>
+  <div class="workspace">
+    <aside id="sources-panel" aria-labelledby="sources-heading" class="sources-panel panel" class:mobile-visible={mobilePane === 'sources'}>
+      <div class="panel-header"><div class="panel-title"><BookOpen size={17}/><h2 id="sources-heading">{$t('page.notebooks')}</h2></div><button class="icon-button" onclick={() => beginNotebook('create')} disabled={state.busy || !ready} aria-label={$t('page.createNotebook')} title={$t('page.createNotebook')}><Plus size={18}/></button></div>
       <div class="notebook-section">
         {#if state.notebooks.length}<div class="notebook-select"><BookOpen size={16}/><select aria-label={$t('page.activeNotebook')} value={state.activeNotebook?.id ?? ''} onchange={(event) => controller.selectNotebook(event.currentTarget.value)} disabled={state.busy}>{#each state.notebooks as notebook}<option value={notebook.id}>{notebook.name}</option>{/each}</select><ChevronDown size={14}/></div><div class="notebook-meta"><span>{$t(state.sources.length === 1 ? 'page.sourceCountDeviceOne' : 'page.sourceCountDeviceMany', { count: state.sources.length })}</span><div><button class="icon-button small-icon" onclick={() => beginNotebook('rename')} disabled={state.busy || !state.activeNotebook} aria-label={$t('page.renameNotebook')}><Pencil size={13}/></button><button class="icon-button small-icon" onclick={() => state.activeNotebook && requestDelete('notebook', state.activeNotebook.name, state.activeNotebook.id)} disabled={!state.activeNotebook} aria-label={$t('page.deleteNotebook')}><Trash2 size={13}/></button></div></div>{/if}
-        {#if notebookEditing}<form class="notebook-form" onsubmit={(event) => { event.preventDefault(); saveNotebook(); }}><label for="notebook-name">{$t(notebookEditing === 'rename' ? 'page.renameNotebook' : 'page.newNotebook')}</label><input id="notebook-name" bind:value={notebookName} placeholder={$t('page.notebookPlaceholder')} maxlength="100" required/><div><button type="button" class="text-button" onclick={() => notebookEditing = null}>{$t('page.cancel')}</button><button class="button small-button" disabled={!notebookName.trim() || state.busy}>{$t('page.save')}</button></div></form>{/if}
+        {#if notebookEditing}<form class="notebook-form" onsubmit={(event) => { event.preventDefault(); saveNotebook(); }}><label for="notebook-name">{$t(notebookEditing === 'rename' ? 'page.renameNotebook' : 'page.newNotebook')}</label><input id="notebook-name" onkeydown={(event) => { if (event.key === 'Escape') notebookEditing = null; }} bind:value={notebookName} placeholder={$t('page.notebookPlaceholder')} maxlength="100" required/><div><button type="button" class="text-button" onclick={() => notebookEditing = null}>{$t('page.cancel')}</button><button class="button small-button" disabled={!notebookName.trim() || state.busy}>{$t('page.save')}</button></div></form>{/if}
         {#if !state.notebooks.length && !notebookEditing}<div class="notebook-empty"><p>{$t('page.notebookEmpty')}</p><button class="button secondary full-width" onclick={() => beginNotebook('create')} disabled={!ready}><Plus size={15}/>{$t('page.createNotebook')}</button></div>{/if}
       </div>
 
@@ -146,13 +167,13 @@
       <div class="sidebar-footer"><span class="tiny-lock"><ShieldCheck size={15}/></span><p>{$t('page.documentsStay')}<br/><span>{$t('page.noIndexUpload')}</span></p></div>
     </aside>
 
-    <section class="research-panel panel" class:mobile-visible={mobilePane === 'work'} aria-label={$t('page.research')}>
-      <div class="panel-header research-header"><div class="research-tabs"><button class:active={activeTab === 'chat'} onclick={() => activeTab = 'chat'}><MessageSquare size={16}/>{$t('page.chat')}</button><button class:active={activeTab === 'search'} onclick={() => activeTab = 'search'}><Search size={16}/>{$t('page.localSearch')}</button>{#if selectedSource}<button class:active={activeTab === 'source'} onclick={() => activeTab = 'source'}><FileText size={16}/>{$t('page.source')}</button>{/if}</div><span class="local-pill"><span class="status-dot"></span>{$t(activeTab === 'search' ? 'page.local' : 'page.sourceGrounded')}</span></div>
-      {#if state.error}<div class="error-banner" role="alert"><AlertCircle size={17}/><span>{#if state.errorMessage && (state.errorMessage.key === 'runtime.fileTooLarge' || state.errorMessage.key === 'runtime.emptyFile')}<bdi>{state.errorMessage.params?.filename}</bdi>{$t(state.errorMessage.key, { ...state.errorMessage.params, filename: '' })}{:else}{state.errorMessage ? $t(state.errorMessage.key, state.errorMessage.params) : $t('runtime.operationFailed')}{/if}</span><button class="icon-button" onclick={() => controller.clearError()} aria-label={$t('page.dismissError')}><X size={15}/></button></div>{/if}
-      {#if state.progress}<div class="progress-banner" role="status" data-stage={state.progress.stage}><LoaderCircle size={17} class="spin"/><div><strong>{state.progress.stageMessage ? $t(state.progress.stageMessage.key, state.progress.stageMessage.params) : $t('runtime.processing')}</strong><span>{#if state.progress.detailMessage?.key === 'runtime.fileProgress'}<bdi>{state.progress.detailMessage.params?.filename}</bdi>{$t(state.progress.detailMessage.key, { ...state.progress.detailMessage.params, filename: '' })}{:else}{state.progress.detailMessage ? $t(state.progress.detailMessage.key, state.progress.detailMessage.params) : (state.progress.total > 0 ? $t('page.progressCount', { current: state.progress.current, total: state.progress.total }) : $t('page.justAMoment'))}{/if}</span>{#if state.progress.total > 0}<progress max={state.progress.total} value={state.progress.current}></progress>{:else}<progress aria-label={$t('page.processing')}></progress>{/if}</div><button class="text-button" onclick={() => controller.cancel()}><Square size={12}/>{$t('page.cancel')}</button></div>{/if}
-      {#if activeTab === 'source' && selectedSource}{#key sourceSelectionVersion}<SourceViewer source={selectedSource} citation={selectedCitation} onClose={() => activeTab = 'chat'}/>{/key}
+    <section id="research-panel" class="research-panel panel" class:mobile-visible={mobilePane === 'work'} aria-label={$t('page.research')}>
+      <h2 class="visually-hidden">{$t('page.research')}</h2>
+      <div class="panel-header research-header"><div class="research-tabs" role="group" aria-label={$t('page.research')}><button class:active={activeTab === 'chat'} aria-pressed={activeTab === 'chat'} aria-controls="research-content" onclick={() => activeTab = 'chat'}><MessageSquare size={16}/>{$t('page.chat')}</button><button class:active={activeTab === 'search'} aria-pressed={activeTab === 'search'} aria-controls="research-content" onclick={() => activeTab = 'search'}><Search size={16}/>{$t('page.localSearch')}</button>{#if selectedSource}<button class:active={activeTab === 'source'} aria-pressed={activeTab === 'source'} aria-controls="research-content" onclick={() => activeTab = 'source'}><FileText size={16}/>{$t('page.source')}</button>{/if}</div><span class="local-pill"><span class="status-dot"></span>{$t(activeTab === 'search' ? 'page.local' : 'page.sourceGrounded')}</span></div>
+      {#if activeTab === 'source' && selectedSource}{#key sourceSelectionVersion}<SourceViewer source={selectedSource} citation={selectedCitation} onClose={closeSource}/>{/key}
       {:else}
-        <div class="research-feed" bind:this={chatFeed} aria-live="polite">
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable content needs keyboard access even without enabled descendant controls.) -->
+<div id="research-content" class="research-feed" tabindex="0" bind:this={chatFeed} role="log" aria-label={$t('page.research')} aria-live="polite" aria-relevant="additions">
           {#if activeTab === 'search'}
             {#if state.searchHits.length}<div class="results-heading"><span class="eyebrow">{$t('page.semanticResults')}</span><span>{$t(state.searchHits.length === 1 ? 'page.excerptCountOne' : 'page.excerptCountMany', { count: state.searchHits.length })}</span></div>{#each state.searchHits as hit}<button class="search-result" onclick={() => showCitation({ id: hit.chunk.id, sourceId: hit.chunk.sourceId, sourceName: hit.sourceName, page: hit.chunk.page, start: hit.chunk.start, end: hit.chunk.end, text: hit.chunk.text })}><div><span><FileText size={13}/><bdi>{displaySourceName(hit.sourceName)}</bdi> · {$t('page.pageNumber', { page: hit.chunk.page })}</span><ArrowUp size={14}/></div><p>{displaySearchSnippet(hit.chunk, state.sources.find(source => source.id === hit.chunk.sourceId)?.pages.find(page => page.page === hit.chunk.page)?.text)}</p><span class="result-score">{$t('page.similarity', { score: formatNumber($locale, hit.score * 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}</span></button>{/each}{:else}<div class="research-empty"><div class="empty-illustration search-illustration"><Search size={31} strokeWidth={1.4}/><span class="orbit-dot"></span></div><span class="eyebrow">{$t('page.searchEyebrow')}</span><h2>{$t(searchAttempted ? 'page.noResults' : 'page.searchMeaning')}</h2><p>{#if searchAttempted}{$t('page.noResultsQuery', { query: searchedQuery })}{:else}{$t('page.searchIntro')}<br/>{$t('page.searchLocal')}{/if}</p></div>{/if}
           {:else if state.messages.length}
@@ -164,14 +185,15 @@
       <button class="provider-bar" onclick={openSettings} disabled={!ready}><span><span class="provider-mark">M</span><span>{$t(state.provider === 'mistral' ? 'page.providerMistral' : 'page.providerOpenrouter')}<small>{$t(state.hasKey ? 'page.sessionKeySaved' : 'page.addKey')}</small></span></span><span class="provider-status" class:connected={state.hasKey}>{#if state.hasKey}<CheckCircle2 size={14}/>{:else}<Plus size={14}/>{/if}<Settings2 size={15}/></span></button>
     </section>
 
-    <aside class="studio-panel panel" class:mobile-visible={mobilePane === 'studio'}>
-      <div class="panel-header"><div class="panel-title"><Sparkles size={17}/><h2>{$t('page.studio')}</h2></div><span class="studio-badge">{$t('page.studioBadge')}</span></div>
+    <aside id="studio-panel" aria-labelledby="studio-heading" class="studio-panel panel" class:mobile-visible={mobilePane === 'studio'}>
+      <div class="panel-header"><div class="panel-title"><Sparkles size={17}/><h2 id="studio-heading">{$t('page.studio')}</h2></div><span class="studio-badge">{$t('page.studioBadge')}</span></div>
       <div class="studio-intro"><h3>{$t('page.studioTitle')}</h3><p>{$t('page.studioIntro')}</p><p class="source-reference-note">{$t('page.chatFootnote')}</p></div>
-      <div class="generator-tabs" role="group" aria-label={$t('page.selectContent')}>{#each Object.entries(generatorDetails) as [kind, details]}<button class:active={generator === kind} onclick={() => generator = kind as StudioKind}><svelte:component this={details.icon} size={18}/><span>{$t(kind === 'summary' ? 'page.summaryTab' : kind === 'faq' ? 'page.faqTitle' : kind === 'study' ? 'page.studyTab' : 'page.podcastTitle')}</span></button>{/each}</div>
+      <div class="generator-tabs" role="group" aria-label={$t('page.selectContent')}>{#each Object.entries(generatorDetails) as [kind, details]}<button class:active={generator === kind} aria-pressed={generator === kind} aria-controls="studio-content" onclick={() => generator = kind as StudioKind}><svelte:component this={details.icon} size={18}/><span>{$t(kind === 'summary' ? 'page.summaryTab' : kind === 'faq' ? 'page.faqTitle' : kind === 'study' ? 'page.studyTab' : 'page.podcastTitle')}</span></button>{/each}</div>
       {#if generator === 'podcast' && controller}
         {#key state.activeNotebook?.id}<PodcastView {controller} {state} onCitation={showCitation} onDelete={(episode) => requestDelete('podcast', episode.script.title, episode.id)}/>{/key}
       {:else}
-      <div class="studio-content">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable content needs keyboard access even without enabled descendant controls.) -->
+<div id="studio-content" class="studio-content" tabindex="0" role="region" aria-label={$t(generatorDetails[generator].titleKey)}>
         {#if artifact}<div class="artifact-heading"><span class="eyebrow">{$t(generatorDetails[generator].titleKey)}</span>{#if staleArtifact}<span class="stale-badge">{$t('page.sourcesChanged')}</span>{:else}<span class="ready-badge"><Check size={11}/>{$t('page.created')}</span>{/if}</div>{#if staleArtifact}<p class="stale-note">{$t('page.staleArtifact')}</p>{/if}<GroundedAnswer answer={artifact.answer} citations={artifact.citations} onCitation={showCitation} {availableSourceIds}/><div class="coverage-info"><span>{$t('page.coverage', { selected: artifact.coverage.selectedSources, total: artifact.coverage.totalSources, percent: artifact.coverage.totalCharacters ? Math.round(artifact.coverage.selectedCharacters / artifact.coverage.totalCharacters * 100) : 0 })}</span><span>{$t(artifact.coverage.limited ? 'page.coverageLimited' : 'page.coverageFull')} · {$t(artifact.provider === 'mistral' ? 'page.providerMistral' : 'page.providerOpenrouter')}</span></div>
         {:else}<div class="studio-empty"><div class="studio-art"><svelte:component this={generatorDetails[generator].icon} size={32} strokeWidth={1.2}/><span class="studio-art-line"></span><span class="studio-art-line short"></span><span class="studio-art-line"></span></div><h3>{$t(generatorDetails[generator].titleKey)}</h3><p>{$t(generatorDetails[generator].descriptionKey)}</p><ul>{#if generator === 'summary'}<li><Check size={13}/>{$t('page.summaryBenefit')}</li><li><Check size={13}/>{$t('page.summaryEvidence')}</li>{:else if generator === 'faq'}<li><Check size={13}/>{$t('page.faqBenefit')}</li><li><Check size={13}/>{$t('page.faqEvidence')}</li>{:else}<li><Check size={13}/>{$t('page.studyBenefit')}</li><li><Check size={13}/>{$t('page.studyEvidence')}</li>{/if}</ul></div>{/if}
       </div>
@@ -179,22 +201,24 @@
       {/if}
       <div class="studio-tip"><span class="tip-icon"><NotebookPen size={17}/></span><div><strong>{$t('page.studioTipTitle')}</strong><p>{$t('page.studioTip')}</p></div></div>
     </aside>
+  </div>
   </main>
   <footer class="app-footer"><span>{$t('page.footerTagline')}</span><span>{$t('page.localProcessing')}<span>·</span> Rust + WebAssembly <span>·</span> BYOK <span>·</span> <a class="repo-link" href="https://github.com/VikingOwl91/research-bench" target="_blank" rel="noopener noreferrer">GitHub</a> <span>·</span> <a class="repo-link" href={sourceArchive}>{$locale === 'de' ? 'Quellcode' : 'Source code'}</a> <span>·</span> <a class="repo-link" href={sourceLicense}>AGPL-3.0-or-later</a></span></footer>
 </div>
 
-<dialog class="settings-dialog" bind:this={settingsDialog} onclose={() => keyInput = ''}>
-  <div class="dialog-header"><div><span class="eyebrow">{$t('page.settingsEyebrow')}</span><h2>{$t('page.settingsTitle')}</h2></div><button class="icon-button" onclick={() => settingsDialog.close()} aria-label={$t('page.closeSettings')}><X size={20}/></button></div>
-  <p class="dialog-description">{$t('page.settingsIntro')}</p>
+<dialog class="settings-dialog" aria-labelledby="settings-title" aria-describedby="settings-intro" use:modalKeyboard bind:this={settingsDialog} onclose={() => keyInput = ''}>
+  <div class="dialog-header"><div><span class="eyebrow">{$t('page.settingsEyebrow')}</span><h2 id="settings-title">{$t('page.settingsTitle')}</h2></div><button class="icon-button" onclick={() => settingsDialog.close()} aria-label={$t('page.closeSettings')}><X size={20}/></button></div>
+  <p id="settings-intro" class="dialog-description">{$t('page.settingsIntro')}</p>
+  <div class="appearance-field"><label for="appearance">{$t('page.appearance')}</label><select id="appearance" value={$themePreference} onchange={(event) => setThemePreference(event.currentTarget.value)}><option value="system">{$t('page.themeSystem')}</option><option value="light">{$t('page.themeLight')}</option><option value="dark">{$t('page.themeDark')}</option></select></div>
   <fieldset class="provider-options"><legend>{$t('page.aiProvider')}</legend><label class:selected={state.provider === 'mistral'}><input type="radio" name="provider" value="mistral" checked={state.provider === 'mistral'} onchange={() => changeProvider('mistral')}/><span><strong>{$t('page.providerMistral')}<span class="recommended">{$t('page.default')}</span></strong><small>{$t('page.mistralEndpoint')}</small></span></label><label class:selected={state.provider === 'openrouter'}><input type="radio" name="provider" value="openrouter" checked={state.provider === 'openrouter'} onchange={() => changeProvider('openrouter')}/><span><strong>{$t('page.providerOpenrouter')}</strong><small>{$t('page.openrouterEndpoint')}</small></span></label></fieldset>
   <div class="settings-model"><span class="eyebrow">{$t('page.model')}</span><strong>{$t(state.provider === 'mistral' ? 'page.modelMistral' : 'page.modelOpenrouter')}</strong></div>
-  <form class="key-form" onsubmit={(event) => { event.preventDefault(); saveKey(); }}><label for="api-key">{$t(state.provider === 'mistral' ? 'page.providerMistral' : 'page.providerOpenrouter')} {$t('page.apiKey')} {#if state.hasKey}<span class="ready-badge"><Check size={12}/>{$t('page.keySaved')}</span>{/if}</label><div><input id="api-key" type="password" bind:value={keyInput} placeholder={$t(state.hasKey ? 'page.replaceKeyPlaceholder' : 'page.keyPlaceholder')} autocomplete="off" spellcheck="false"/><button class="button" disabled={!keyInput.trim()}>{$t('page.save')}</button></div><p>{$t('page.keyPrivacy')}</p>{#if state.hasKey}<button type="button" class="text-button" onclick={() => controller.setKey('')}>{$t('page.removeKey')}</button>{/if}</form>
+  <form class="key-form" onsubmit={(event) => { event.preventDefault(); saveKey(); }}><label for="api-key">{$t(state.provider === 'mistral' ? 'page.providerMistral' : 'page.providerOpenrouter')} {$t('page.apiKey')} {#if state.hasKey}<span class="ready-badge"><Check size={12}/>{$t('page.keySaved')}</span>{/if}</label><div><input id="api-key" type="password" bind:value={keyInput} placeholder={$t(state.hasKey ? 'page.replaceKeyPlaceholder' : 'page.keyPlaceholder')} autocomplete="off" spellcheck="false" aria-describedby="key-privacy"/><button class="button" disabled={!keyInput.trim()}>{$t('page.save')}</button></div><p id="key-privacy">{$t('page.keyPrivacy')}</p>{#if state.hasKey}<button type="button" class="text-button" onclick={() => controller.setKey('')}>{$t('page.removeKey')}</button>{/if}</form>
   <div class="privacy-detail"><ShieldCheck size={18}/><div><strong>{$t('page.privacyTitle')}</strong><p>{$t('page.privacyDataFlow')}</p><p>{$t(state.provider === 'mistral' ? 'page.mistralPrivacy' : 'page.openrouterPrivacy')}</p></div></div>
   <div class="danger-zone"><div><strong>{$t('page.clearData')}</strong><p>{$t('page.clearDataDetail')}</p></div><button class="button danger-button" onclick={() => requestDelete('all', '')}><Trash2 size={15}/>{$t('page.delete')}</button></div>
 </dialog>
 
-<dialog class="confirmation-dialog" bind:this={confirmDialog}>
-  <div class="delete-icon"><Trash2 size={24}/></div><h2>{$t(deletion?.kind === 'all' ? 'page.deleteAllQuestion' : deletion?.kind === 'notebook' ? 'page.deleteNotebookQuestion' : deletion?.kind === 'podcast' ? 'page.deletePodcastQuestion' : 'page.deleteSourceQuestion')}</h2><p><strong><bdi>{deletion?.kind === 'all' ? $t('page.allDataName') : deletion?.kind === 'source' ? displaySourceName(deletion.name) : deletion?.name}</bdi></strong></p><p>{$t(deletion?.kind === 'all' ? 'page.deleteAllDetail' : deletion?.kind === 'notebook' ? 'page.deleteNotebookDetail' : deletion?.kind === 'podcast' ? 'page.deletePodcastDetail' : 'page.deleteSourceDetail')}</p><div class="dialog-actions"><button class="button secondary" onclick={() => confirmDialog.close()}>{$t('page.cancel')}</button><button class="button danger-button" onclick={confirmDelete}>{$t('page.deletePermanently')}</button></div>
+<dialog class="confirmation-dialog" aria-labelledby="confirmation-title" aria-describedby="confirmation-detail" use:modalKeyboard bind:this={confirmDialog}>
+  <div class="delete-icon"><Trash2 size={24}/></div><h2 id="confirmation-title">{$t(deletion?.kind === 'all' ? 'page.deleteAllQuestion' : deletion?.kind === 'notebook' ? 'page.deleteNotebookQuestion' : deletion?.kind === 'podcast' ? 'page.deletePodcastQuestion' : 'page.deleteSourceQuestion')}</h2><p><strong><bdi>{deletion?.kind === 'all' ? $t('page.allDataName') : deletion?.kind === 'source' ? displaySourceName(deletion.name) : deletion?.name}</bdi></strong></p><p id="confirmation-detail">{$t(deletion?.kind === 'all' ? 'page.deleteAllDetail' : deletion?.kind === 'notebook' ? 'page.deleteNotebookDetail' : deletion?.kind === 'podcast' ? 'page.deletePodcastDetail' : 'page.deleteSourceDetail')}</p><div class="dialog-actions"><button class="button secondary" onclick={() => confirmDialog.close()}>{$t('page.cancel')}</button><button class="button danger-button" onclick={confirmDelete}>{$t('page.deletePermanently')}</button></div>
 </dialog>
 
 <style>

@@ -85,6 +85,9 @@ test('actual response blocks same-origin framing, and tampered or late meta fail
     const html = await readFile('build/index.html', 'utf8');
     expect(() => validateDocumentPolicy(html.replace('http-equiv="content-security-policy"', 'http-equiv="unused"'), DOCUMENT_HEADER_CSP)).toThrow();
     expect(() => validateDocumentPolicy(html.replace('<meta http-equiv', '<link rel="preload" href="/early.js"><meta http-equiv'), DOCUMENT_HEADER_CSP)).toThrow();
-    expect(() => validateDocumentPolicy(html.replace(/(<script[^>]*>)/, '$1window.changedBootstrap=true;'), DOCUMENT_HEADER_CSP)).toThrow();
+    // The early theme initializer is external; tamper the actual inline bootstrap.
+    const bootstrapStart = /(<script\b(?![^>]*\bsrc\s*=)[^>]*>)/;
+    expect(html).toMatch(bootstrapStart);
+    expect(() => validateDocumentPolicy(html.replace(bootstrapStart, '$1window.changedBootstrap=true;'), DOCUMENT_HEADER_CSP)).toThrow();
   } finally { await context.close(); await instance.close(); }
 });

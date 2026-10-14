@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.4 — 2026-10-14
+
+- System, Light and Dark appearance with persisted preferences and switching without reload.
+- Consistent semantic colors, readable disclosures, native controls and visible keyboard focus.
+- Responsive Sources/Research/Studio panes, narrow-screen reflow and safe-area styling.
+- Named dialogs and landmarks, keyboard focus management and accessible Podcast seek labels.
+- Chromium/Firefox appearance, text-resizing and accessibility regression coverage.
+
+Generation behavior and citation validation are unchanged. Source references do not
+provide automatic semantic verification; German podcast voices remain experimental.
+
 ## 0.0.3 — 2026-10-13
 
 - AGPL-3.0-or-later for new application code; historical MIT releases remain unchanged.

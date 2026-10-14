@@ -197,7 +197,7 @@ test('podcast speech stays independently English; locale switching preserves ren
   await expect(page.locator('#podcast-language')).toHaveValue('en');
   await expect(page.locator('.podcast-title')).toHaveText('Original English podcast');
   await audio.evaluate((a: HTMLAudioElement) => a.pause());
-  await page.getByRole('button', { name: 'Zu Beitrag 3 springen', exact: true }).click();
+  await page.getByRole('button', { name: /Zu Beitrag 3 springen$/ }).click();
   await expect(page.locator('.podcast-turn').nth(2)).toHaveClass(/playing/);
   await page.locator('#interface-language').selectOption('en');
   await page.locator('.podcast-player').scrollIntoViewIfNeeded();

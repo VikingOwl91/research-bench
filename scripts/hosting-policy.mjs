@@ -173,7 +173,8 @@ export function validateDocumentPolicy(html, header, options = {}) {
     if (/\bon\w+\s*=|\bnonce\s*=/i.test(script[1])) throw new Error('Unapproved script attributes.');
     const attrs = attributes(`<script ${script[1]}>`);
     if (attrs.has('src')) {
-      if (!/^\/?_app\//.test(attrs.get('src'))) throw new Error('Unapproved script URL.');
+      const src = attrs.get('src');
+      if (src !== '/theme-init.js' && !/^\/?_app\//.test(src)) throw new Error('Unapproved script URL.');
     } else hashes.push(`'sha256-${createHash('sha256').update(script[2]).digest('base64')}'`);
   }
   if (!hashes.length) throw new Error('Missing SvelteKit bootstrap.');

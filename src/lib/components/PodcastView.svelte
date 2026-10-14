@@ -97,7 +97,8 @@
   });
 </script>
 
-<div class="studio-content podcast-content">
+<!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable content needs keyboard access even without enabled descendant controls.) -->
+<div id="studio-content" class="studio-content podcast-content" tabindex="0" role="region" aria-label={$t('components.podcast.transcriptLabel')}>
   <div class="podcast-options"><label for="podcast-language">{$t('components.podcast.language')}</label><select id="podcast-language" bind:value={language} disabled={state.busy}><option value="en">{$t('components.podcast.english')}</option><option value="de">{$t('components.podcast.german')}</option></select><span>{$t('components.podcast.length')}</span></div>
   {#if language === 'de'}<p class="stale-note">{$t('components.podcast.experimental')}</p>{/if}
   <div class="podcast-voices"><span><Volume2 size={14}/>{$t('components.podcast.voices')}</span><button class="text-button" onclick={probeVoices} disabled={!state.hasKey || state.busy || !locksAvailable}>{$t('components.podcast.testVoices')}</button><p>{$t('components.podcast.probeNotice', { provider: $t(`components.provider.${state.provider}`) })}</p>{#if probeUrl}<audio bind:this={probePlayer} class="podcast-probe" controls src={probeUrl} aria-label={$t('components.podcast.probe')} preload="metadata" onloadedmetadata={applyProbeSpeed} ontimeupdate={applyProbeSpeed} onseeked={applyProbeSpeed}></audio><p>{$t('components.podcast.listen')}</p>{/if}</div>
@@ -121,7 +122,7 @@
       {#each transcript.script.turns as turn}
         {@const timing = finished?.timeline?.find((item) => item.turnId === turn.id)}
         <section class="podcast-turn" class:playing={activeTurnId === turn.id}>
-          <button class="podcast-turn-seek" onclick={() => seek(turn.id)} disabled={!audioUrl || !timing} aria-label={$t('components.podcast.jump', { number: transcript.script.turns.indexOf(turn) + 1 })}><span class="podcast-speaker" class:speaker-b={turn.speaker === 'B'}>{turn.speaker === 'A' ? 'Oliver' : 'Jane'}</span>{#if timing}<span>{formatTime(timing.start)}</span>{/if}</button>
+          <button class="podcast-turn-seek" onclick={() => seek(turn.id)} disabled={!audioUrl || !timing}><span class="podcast-speaker" class:speaker-b={turn.speaker === 'B'}>{turn.speaker === 'A' ? 'Oliver' : 'Jane'}</span>{#if timing}<span>{formatTime(timing.start)}</span>{/if}<span class="visually-hidden">{$t('components.podcast.jump', { number: transcript.script.turns.indexOf(turn) + 1 })}</span></button>
           <p>{turn.text}</p>
           {#if turn.citationIds.length}<div class="citations" aria-label={$t('components.citations')}>{#each turn.citationIds as id}{@const citation = transcript.citations.find((item) => item.id === id)}{#if citation}<button class="citation" disabled={!availableSourceIds.includes(citation.sourceId)} onclick={() => onCitation(citation)} title={`${displaySourceName(citation.sourceName)} · ${$t('components.citation.page', { page: citation.page })}\n${citation.text}`}><FileText size={11}/><span><bdi>{displaySourceName(citation.sourceName)}</bdi> · {formatNumber($locale, citation.page)}</span>{#if !availableSourceIds.includes(citation.sourceId)}<span>{$t('components.citation.removed')}</span>{/if}</button>{/if}{/each}</div>{/if}
         </section>
