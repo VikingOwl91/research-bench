@@ -97,15 +97,27 @@ describe('applySupportGate quarantines unsupported cited blocks', () => {
     expect(result.value.blocks[1].citationIds).toEqual(['C1']);
   });
 
-  it('quarantines an unsupported heading and keeps supported content', () => {
+  it('drops only an unsupported heading and keeps the supported text', () => {
     const answer: GroundedAnswer = {
       title: 'T',
-      blocks: [{ heading: 'The 99 mg/L safety limit', text: 'The document is about water measurements.', citationIds: ['C1'] }]
+      blocks: [{ heading: 'The 99 mg/L safety limit', text: 'The log records 17 mg/L for W-17.', citationIds: ['C1'] }]
     };
     const result = applySupportGate(answer, citations, notice);
     expect(result.quarantined).toBe(1);
     expect(result.value.blocks[0].heading).toBe('');
+    expect(result.value.blocks[0].text).toBe('The log records 17 mg/L for W-17.');
+    expect(result.value.blocks[0].citationIds).toEqual(['C1']);
+  });
+
+  it('quarantines an uncited block whose specifics are absent from the full excerpt pool', () => {
+    const answer: GroundedAnswer = {
+      title: 'T',
+      blocks: [{ text: 'The nitrate level is 99 mg/L and completely safe.', citationIds: [] }]
+    };
+    const result = applySupportGate(answer, citations, notice);
+    expect(result.quarantined).toBe(1);
     expect(result.value.blocks[0].text).toBe(notice);
+    expect(result.value.blocks[0].citationIds).toEqual([]);
   });
 
   it('leaves uncited, uncheckable and fully supported blocks unchanged', () => {
@@ -114,12 +126,22 @@ describe('applySupportGate quarantines unsupported cited blocks', () => {
       blocks: [
         { text: 'The provided excerpts do not answer this question.', citationIds: [] },
         { text: 'The framework turns purpose into activities.', citationIds: ['C1'] },
-        { text: 'W-17 measured 17 mg/L.', citationIds: ['C1'] }
+        { text: 'W-17 measured 17 mg/L.', citationIds: ['C1'] },
+        { text: 'The log has two samples and 17 mg/L in W-17.', citationIds: [] }
       ]
     };
     const result = applySupportGate(answer, citations, notice);
     expect(result.quarantined).toBe(0);
     expect(result.value).toEqual(answer);
+  });
+
+  it('matches numbers across thousand-separator and decimal formatting', () => {
+    const excerpt = 'The device consumes 1234 watts and was released in 2019.';
+    const pool = [1234, 2019];
+    expect(isSupportedByExcerpts('It consumes 1,234 watts.', excerpt, pool)).toBe(true);
+    expect(isSupportedByExcerpts('It was released in 2019.', excerpt, pool)).toBe(true);
+    expect(isSupportedByExcerpts('It consumes 18,4 watts.', excerpt, [18.4])).toBe(true);
+    expect(isSupportedByExcerpts('It consumes 0.012 kilowatts.', excerpt, pool)).toBe(false);
   });
 });
 

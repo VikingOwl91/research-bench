@@ -105,8 +105,15 @@ function normalizeText(text: string): string {
   return text.normalize('NFKC').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Normalize a number literal for comparison: thousand-grouped forms
+ * ("1,234" / "1.234") become integers, decimal forms ("18,4" / "18.4") unify
+ * to a dot, everything else is rejected. Both claim and excerpt numbers use
+ * the same rule, so formatting never decides support.
+ */
 function parseNumber(raw: string): number | null {
-  const normalized = raw.replace(',', '.');
+  const thousandGrouped = /^[1-9]\d{0,2}(?:[.,]\d{3})+$/.test(raw);
+  const normalized = thousandGrouped ? raw.replace(/[.,]/g, '') : raw.replace(',', '.');
   if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
   const value = Number(normalized);
   return Number.isFinite(value) ? value : null;
@@ -176,35 +183,43 @@ export interface SupportGateResult<T> { value: T; quarantined: number }
 
 /**
  * Quarantine answer blocks whose cited excerpts cannot match their checkable
- * specifics. Quarantined blocks keep their supported heading (if any), lose
- * their citations, and carry a deterministic removal notice instead of the
- * unsupported claim.
+ * specifics. Blocks without citations are checked against the full excerpt
+ * pool, so an uncited fabricated claim cannot evade the gate either. Quarantined
+ * text carries a deterministic removal notice instead of the unsupported claim;
+ * a supported heading or text survives independently of the other.
  */
 export function applySupportGate(answer: GroundedAnswer, citations: readonly Citation[], notice: string): SupportGateResult<GroundedAnswer> {
   let quarantined = 0;
+  const full = excerptPool(citations, citations.map(c => c.id));
   const blocks = answer.blocks.map(block => {
-    if (!block.citationIds.length) return block;
-    const excerpt = excerptPool(citations, block.citationIds);
+    const excerpt = block.citationIds.length ? excerptPool(citations, block.citationIds) : full;
     if (!excerpt) return block;
     const headingSupported = !block.heading || isSupportedByExcerpts(block.heading, excerpt.pool, excerpt.numbers);
     const textSupported = isSupportedByExcerpts(block.text, excerpt.pool, excerpt.numbers);
     if (headingSupported && textSupported) return block;
     quarantined++;
-    return { ...block, heading: headingSupported ? block.heading : '', text: notice, citationIds: [] };
+    return {
+      ...block,
+      heading: headingSupported ? block.heading : '',
+      text: textSupported ? block.text : notice,
+      citationIds: textSupported ? block.citationIds : []
+    };
   });
   return { value: { ...answer, blocks }, quarantined };
 }
 
 /**
- * Podcast equivalent: an unsupported cited turn is replaced by a deterministic
- * removal notice (same speaker, no citations), so the fabricated claim is never
- * persisted in the transcript nor sent to speech synthesis.
+ * Podcast equivalent: a turn whose cited excerpts cannot match its checkable
+ * specifics is replaced by a deterministic removal notice (same speaker, no
+ * citations), so the fabricated claim is never persisted in the transcript
+ * nor sent to speech synthesis. Uncited turns are checked against the full
+ * excerpt pool, like answer blocks.
  */
 export function applyPodcastSupportGate(script: PodcastScript, citations: readonly Citation[], notice: string): SupportGateResult<PodcastScript> {
   let quarantined = 0;
+  const full = excerptPool(citations, citations.map(c => c.id));
   const turns = script.turns.map(turn => {
-    if (!turn.citationIds.length) return turn;
-    const excerpt = excerptPool(citations, turn.citationIds);
+    const excerpt = turn.citationIds.length ? excerptPool(citations, turn.citationIds) : full;
     if (!excerpt) return turn;
     if (isSupportedByExcerpts(turn.text, excerpt.pool, excerpt.numbers)) return turn;
     quarantined++;
