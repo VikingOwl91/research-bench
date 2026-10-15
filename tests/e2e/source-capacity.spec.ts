@@ -93,7 +93,9 @@ test('capacity, sequential overflow accounting, full drops, deletion and reopeni
   await observeImports(page); await ready(page);
   await expect(page.locator('.count-badge')).toHaveText('0 / 50');
   await expect(page.locator('#source-capacity-note')).toHaveText('50 source slots available.');
-  await page.locator('#source-upload').setInputFiles(smallFile('first.txt'));
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Add sources', exact: true }).click();
+  await (await chooser).setFiles(smallFile('first.txt'));
   await expect(page.locator('.source-open')).toHaveCount(1, { timeout: 180_000 });
   await expect(page.locator('.import-report')).toContainText('Imported: 1');
   await page.locator('#source-upload').setInputFiles([smallFile('invalid.exe'), smallFile('not-attempted.txt')]);

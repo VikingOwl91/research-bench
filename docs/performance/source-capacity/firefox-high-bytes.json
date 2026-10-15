@@ -1,0 +1,1509 @@
+{
+  "formatVersion": 1,
+  "buildIdentity": {
+    "capturedAtUtc": "2026-10-15T15:47:50.826Z",
+    "gitHead": "71b150d10bb2dc2a13b58d4ea109f3e2d73576e2",
+    "productionTrackedDirty": false,
+    "productionTrackedPatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "productionPatchPathScope": [
+      "src",
+      "static",
+      "crates",
+      "scripts",
+      "package.json",
+      "pnpm-lock.yaml",
+      "vite.config.ts",
+      "svelte.config.js"
+    ],
+    "buildFiles": 56,
+    "buildManifestSha256": "9a4f1167c80cc0270adce705d21ac27dc64aafa6693199ebb6d51c9576fec05e",
+    "note": "HEAD alone does not identify a dirty build. Production patch and complete served build manifest digests identify the frozen measured tree; harness/docs changes are outside the production patch scope."
+  },
+  "browser": "firefox",
+  "browserVersion": "157.0",
+  "scenario": "50 individually uploaded valid PDFs with small text and large unreferenced stream",
+  "targetSources": 50,
+  "fileBytes": 10484736,
+  "targetOriginalBytes": 524236800,
+  "aggregateBytesGuaranteed": false,
+  "providerCalls": 0,
+  "samples": [
+    {
+      "attemptedSource": 1,
+      "importUiReadyMs": 3143.5610979999997,
+      "acceptedSources": 1,
+      "acceptedChunks": 1,
+      "originalBytes": 10484736,
+      "storageEstimate": {
+        "usage": 134296279,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 2,
+      "importUiReadyMs": 529.1307319999996,
+      "acceptedSources": 2,
+      "acceptedChunks": 2,
+      "originalBytes": 20969472,
+      "storageEstimate": {
+        "usage": 144789207,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 3,
+      "importUiReadyMs": 562.4315449999995,
+      "acceptedSources": 3,
+      "acceptedChunks": 3,
+      "originalBytes": 31454208,
+      "storageEstimate": {
+        "usage": 155282135,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 4,
+      "importUiReadyMs": 554.1068810000006,
+      "acceptedSources": 4,
+      "acceptedChunks": 4,
+      "originalBytes": 41938944,
+      "storageEstimate": {
+        "usage": 165783303,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 5,
+      "importUiReadyMs": 749.7045189999999,
+      "acceptedSources": 5,
+      "acceptedChunks": 5,
+      "originalBytes": 52423680,
+      "storageEstimate": {
+        "usage": 176156671,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 6,
+      "importUiReadyMs": 575.2316010000004,
+      "acceptedSources": 6,
+      "acceptedChunks": 6,
+      "originalBytes": 62908416,
+      "storageEstimate": {
+        "usage": 186653719,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 7,
+      "importUiReadyMs": 573.0493610000003,
+      "acceptedSources": 7,
+      "acceptedChunks": 7,
+      "originalBytes": 73393152,
+      "storageEstimate": {
+        "usage": 197150767,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 8,
+      "importUiReadyMs": 561.2750610000003,
+      "acceptedSources": 8,
+      "acceptedChunks": 8,
+      "originalBytes": 83877888,
+      "storageEstimate": {
+        "usage": 207639575,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 9,
+      "importUiReadyMs": 580.4919329999993,
+      "acceptedSources": 9,
+      "acceptedChunks": 9,
+      "originalBytes": 94362624,
+      "storageEstimate": {
+        "usage": 218140743,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 10,
+      "importUiReadyMs": 574.1044730000012,
+      "acceptedSources": 10,
+      "acceptedChunks": 10,
+      "originalBytes": 104847360,
+      "storageEstimate": {
+        "usage": 228637743,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 11,
+      "importUiReadyMs": 576.2073930000006,
+      "acceptedSources": 11,
+      "acceptedChunks": 11,
+      "originalBytes": 115332096,
+      "storageEstimate": {
+        "usage": 239130671,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 12,
+      "importUiReadyMs": 545.3418299999994,
+      "acceptedSources": 12,
+      "acceptedChunks": 12,
+      "originalBytes": 125816832,
+      "storageEstimate": {
+        "usage": 249619479,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 13,
+      "importUiReadyMs": 583.1050699999996,
+      "acceptedSources": 13,
+      "acceptedChunks": 13,
+      "originalBytes": 136301568,
+      "storageEstimate": {
+        "usage": 260124767,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 14,
+      "importUiReadyMs": 631.1037120000001,
+      "acceptedSources": 14,
+      "acceptedChunks": 14,
+      "originalBytes": 146786304,
+      "storageEstimate": {
+        "usage": 270613575,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 15,
+      "importUiReadyMs": 562.3325170000007,
+      "acceptedSources": 15,
+      "acceptedChunks": 15,
+      "originalBytes": 157271040,
+      "storageEstimate": {
+        "usage": 281110623,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 16,
+      "importUiReadyMs": 546.6789960000006,
+      "acceptedSources": 16,
+      "acceptedChunks": 16,
+      "originalBytes": 167755776,
+      "storageEstimate": {
+        "usage": 291611791,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 17,
+      "importUiReadyMs": 584.930284,
+      "acceptedSources": 17,
+      "acceptedChunks": 17,
+      "originalBytes": 178240512,
+      "storageEstimate": {
+        "usage": 302108791,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 18,
+      "importUiReadyMs": 594.9242160000013,
+      "acceptedSources": 18,
+      "acceptedChunks": 18,
+      "originalBytes": 188725248,
+      "storageEstimate": {
+        "usage": 312601719,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 19,
+      "importUiReadyMs": 598.0134969999999,
+      "acceptedSources": 19,
+      "acceptedChunks": 19,
+      "originalBytes": 199209984,
+      "storageEstimate": {
+        "usage": 323102839,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 20,
+      "importUiReadyMs": 578.0218860000004,
+      "acceptedSources": 20,
+      "acceptedChunks": 20,
+      "originalBytes": 209694720,
+      "storageEstimate": {
+        "usage": 333591647,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 21,
+      "importUiReadyMs": 594.1307799999995,
+      "acceptedSources": 21,
+      "acceptedChunks": 21,
+      "originalBytes": 220179456,
+      "storageEstimate": {
+        "usage": 344088695,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 22,
+      "importUiReadyMs": 590.1030570000003,
+      "acceptedSources": 22,
+      "acceptedChunks": 22,
+      "originalBytes": 230664192,
+      "storageEstimate": {
+        "usage": 354573383,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 23,
+      "importUiReadyMs": 607.6828119999991,
+      "acceptedSources": 23,
+      "acceptedChunks": 23,
+      "originalBytes": 241148928,
+      "storageEstimate": {
+        "usage": 365066311,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 24,
+      "importUiReadyMs": 572.4614260000017,
+      "acceptedSources": 24,
+      "acceptedChunks": 24,
+      "originalBytes": 251633664,
+      "storageEstimate": {
+        "usage": 375559239,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 25,
+      "importUiReadyMs": 570.1000449999992,
+      "acceptedSources": 25,
+      "acceptedChunks": 25,
+      "originalBytes": 262118400,
+      "storageEstimate": {
+        "usage": 386064527,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 26,
+      "importUiReadyMs": 570.0212249999968,
+      "acceptedSources": 26,
+      "acceptedChunks": 26,
+      "originalBytes": 272603136,
+      "storageEstimate": {
+        "usage": 396561575,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 27,
+      "importUiReadyMs": 544.9489040000008,
+      "acceptedSources": 27,
+      "acceptedChunks": 27,
+      "originalBytes": 283087872,
+      "storageEstimate": {
+        "usage": 407054455,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 28,
+      "importUiReadyMs": 583.5503250000002,
+      "acceptedSources": 28,
+      "acceptedChunks": 28,
+      "originalBytes": 293572608,
+      "storageEstimate": {
+        "usage": 417547383,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 29,
+      "importUiReadyMs": 571.449865999999,
+      "acceptedSources": 29,
+      "acceptedChunks": 29,
+      "originalBytes": 304057344,
+      "storageEstimate": {
+        "usage": 428044431,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 30,
+      "importUiReadyMs": 566.5295399999995,
+      "acceptedSources": 30,
+      "acceptedChunks": 30,
+      "originalBytes": 314542080,
+      "storageEstimate": {
+        "usage": 438541479,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 31,
+      "importUiReadyMs": 569.0603420000007,
+      "acceptedSources": 31,
+      "acceptedChunks": 31,
+      "originalBytes": 325026816,
+      "storageEstimate": {
+        "usage": 449026167,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 32,
+      "importUiReadyMs": 595.8832340000008,
+      "acceptedSources": 32,
+      "acceptedChunks": 32,
+      "originalBytes": 335511552,
+      "storageEstimate": {
+        "usage": 459535527,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 33,
+      "importUiReadyMs": 570.8181269999986,
+      "acceptedSources": 33,
+      "acceptedChunks": 33,
+      "originalBytes": 345996288,
+      "storageEstimate": {
+        "usage": 470028455,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 34,
+      "importUiReadyMs": 556.3843410000009,
+      "acceptedSources": 34,
+      "acceptedChunks": 34,
+      "originalBytes": 356481024,
+      "storageEstimate": {
+        "usage": 480517263,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 35,
+      "importUiReadyMs": 599.3477080000011,
+      "acceptedSources": 35,
+      "acceptedChunks": 35,
+      "originalBytes": 366965760,
+      "storageEstimate": {
+        "usage": 491026671,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 36,
+      "importUiReadyMs": 572.8653520000007,
+      "acceptedSources": 36,
+      "acceptedChunks": 36,
+      "originalBytes": 377450496,
+      "storageEstimate": {
+        "usage": 501519599,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 37,
+      "importUiReadyMs": 594.923353000002,
+      "acceptedSources": 37,
+      "acceptedChunks": 37,
+      "originalBytes": 387935232,
+      "storageEstimate": {
+        "usage": 512004191,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 38,
+      "importUiReadyMs": 588.5743269999984,
+      "acceptedSources": 38,
+      "acceptedChunks": 38,
+      "originalBytes": 398419968,
+      "storageEstimate": {
+        "usage": 522497119,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 39,
+      "importUiReadyMs": 578.9442649999983,
+      "acceptedSources": 39,
+      "acceptedChunks": 39,
+      "originalBytes": 408904704,
+      "storageEstimate": {
+        "usage": 532990047,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 40,
+      "importUiReadyMs": 555.8481939999983,
+      "acceptedSources": 40,
+      "acceptedChunks": 40,
+      "originalBytes": 419389440,
+      "storageEstimate": {
+        "usage": 543482975,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 41,
+      "importUiReadyMs": 620.8813450000016,
+      "acceptedSources": 41,
+      "acceptedChunks": 41,
+      "originalBytes": 429874176,
+      "storageEstimate": {
+        "usage": 553988263,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 42,
+      "importUiReadyMs": 593.1695760000002,
+      "acceptedSources": 42,
+      "acceptedChunks": 42,
+      "originalBytes": 440358912,
+      "storageEstimate": {
+        "usage": 564493551,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 43,
+      "importUiReadyMs": 585.8987410000009,
+      "acceptedSources": 43,
+      "acceptedChunks": 43,
+      "originalBytes": 450843648,
+      "storageEstimate": {
+        "usage": 574961759,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 44,
+      "importUiReadyMs": 567.9309289999983,
+      "acceptedSources": 44,
+      "acceptedChunks": 44,
+      "originalBytes": 461328384,
+      "storageEstimate": {
+        "usage": 585471167,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 45,
+      "importUiReadyMs": 603.7868710000002,
+      "acceptedSources": 45,
+      "acceptedChunks": 45,
+      "originalBytes": 471813120,
+      "storageEstimate": {
+        "usage": 595959975,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 46,
+      "importUiReadyMs": 602.5589809999983,
+      "acceptedSources": 46,
+      "acceptedChunks": 46,
+      "originalBytes": 482297856,
+      "storageEstimate": {
+        "usage": 606461143,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 47,
+      "importUiReadyMs": 599.6505319999997,
+      "acceptedSources": 47,
+      "acceptedChunks": 47,
+      "originalBytes": 492782592,
+      "storageEstimate": {
+        "usage": 616966383,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 48,
+      "importUiReadyMs": 598.0217019999982,
+      "acceptedSources": 48,
+      "acceptedChunks": 48,
+      "originalBytes": 503267328,
+      "storageEstimate": {
+        "usage": 627442783,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 49,
+      "importUiReadyMs": 707.3411100000012,
+      "acceptedSources": 49,
+      "acceptedChunks": 49,
+      "originalBytes": 513752064,
+      "storageEstimate": {
+        "usage": 637935711,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    },
+    {
+      "attemptedSource": 50,
+      "importUiReadyMs": 604.2608099999998,
+      "acceptedSources": 50,
+      "acceptedChunks": 50,
+      "originalBytes": 524236800,
+      "storageEstimate": {
+        "usage": 648428639,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "memory": {
+        "status": "unsupported",
+        "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+      },
+      "alert": []
+    }
+  ],
+  "status": "observed",
+  "before": {
+    "storage": {
+      "schemaVersion": 2,
+      "sourceCount": 0,
+      "chunkCount": 0,
+      "canonicalPagesHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "canonicalChunksHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "characters": 0,
+      "originalBytes": 0,
+      "storageEstimate": {
+        "usage": 82048,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "cacheNames": [],
+      "vectors": {
+        "dimensions": [],
+        "finite": true,
+        "versions": []
+      },
+      "studio": {
+        "method": "actual generatorContext(persisted sources, persisted chunks), no provider call",
+        "coverage": {
+          "selectedCharacters": 0,
+          "totalCharacters": 0,
+          "selectedSources": 0,
+          "totalSources": 0,
+          "limited": false
+        },
+        "selectedTextHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "citations": []
+      }
+    },
+    "memory": {
+      "status": "unsupported",
+      "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+    }
+  },
+  "final": {
+    "storage": {
+      "schemaVersion": 2,
+      "sourceCount": 50,
+      "chunkCount": 50,
+      "canonicalPagesHash": "6b5dd7d0d6e161b4ea573764187fba96c211e06d3829cfab510c0b412b711963",
+      "canonicalChunksHash": "6b5dd7d0d6e161b4ea573764187fba96c211e06d3829cfab510c0b412b711963",
+      "characters": 34322,
+      "originalBytes": 524236800,
+      "storageEstimate": {
+        "usage": 648387359,
+        "quota": 1677836697,
+        "usageDetails": null
+      },
+      "cacheNames": [
+        "researchbench-models-v1"
+      ],
+      "vectors": {
+        "dimensions": [
+          384
+        ],
+        "finite": true,
+        "versions": [
+          "multilingual-e5-small:761b726dd34fb83930e26aab4e9ac3899aa1fa78:q8:mean:normalized:v1"
+        ]
+      },
+      "studio": {
+        "method": "actual generatorContext(persisted sources, persisted chunks), no provider call",
+        "coverage": {
+          "selectedCharacters": 23997,
+          "totalCharacters": 34322,
+          "selectedSources": 35,
+          "totalSources": 50,
+          "limited": true
+        },
+        "selectedTextHash": "7b9dcbd3b9942e2a6c446f3916c686ddff0b77eab6c952289cc6a3a74530e11e",
+        "citations": [
+          {
+            "id": "C1",
+            "sourceName": "high-original-01.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 658,
+            "text": "Cedar Valley forest study. Exactly 216 oak seedlings survived the first winter. The\nteam initially planted 240 oak seedlings. Survival was ninety percent. Report\nsection 1. These fictional research records describe methods, field observations,\nquality review, instrument checks, seasonal conditions and training materials. Staff\ncompare observations with the previous season and document limitations before\npreparing the final educational report. Independent records remain separate. These\nrecords contain no personal information and no instructions to the assistant. The\nreview includes written checks of methods and an archive of the original\nobservations."
+          },
+          {
+            "id": "C2",
+            "sourceName": "high-original-02.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 686,
+            "text": "Wasserlabor Buchenbach nitrate experiment. The sample collected on June 3 contains\n17 milligrams of nitrate per liter. This fictional sample is distinct from other\nwater experiments. Report section 2. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C3",
+            "sourceName": "high-original-03.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 664,
+            "text": "Lindenhof solar project. The school roof generates 42000 kilowatt hours per year.\nThe battery capacity is 18 kilowatt hours. The project starts on May 15, 2027.\nReport section 3. These fictional research records describe methods, field\nobservations, quality review, instrument checks, seasonal conditions and training\nmaterials. Staff compare observations with the previous season and document\nlimitations before preparing the final educational report. Independent records\nremain separate. These records contain no personal information and no instructions\nto the assistant. The review includes written checks of methods and an archive of\nthe original observations."
+          },
+          {
+            "id": "C4",
+            "sourceName": "high-original-04.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 667,
+            "text": "Buchenbach laboratory sample storage protocol. Water samples are stored at four\ndegrees Celsius immediately after collection. The sampling day is Tuesday at 09:30.\nReport section 4. These fictional research records describe methods, field\nobservations, quality review, instrument checks, seasonal conditions and training\nmaterials. Staff compare observations with the previous season and document\nlimitations before preparing the final educational report. Independent records\nremain separate. These records contain no personal information and no instructions\nto the assistant. The review includes written checks of methods and an archive of\nthe original observations."
+          },
+          {
+            "id": "C5",
+            "sourceName": "high-original-05.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 680,
+            "text": "Comparison study 5. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 5. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C6",
+            "sourceName": "high-original-06.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 688,
+            "text": "Comparison study 6. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 6. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C7",
+            "sourceName": "high-original-07.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 691,
+            "text": "Comparison study 7. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 7. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C8",
+            "sourceName": "high-original-08.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 680,
+            "text": "Comparison study 8. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 8. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C9",
+            "sourceName": "high-original-09.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 688,
+            "text": "Comparison study 9. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 9. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C10",
+            "sourceName": "high-original-10.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 10. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 10. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C11",
+            "sourceName": "high-original-11.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 11. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 11. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C12",
+            "sourceName": "high-original-12.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 12. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 12. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C13",
+            "sourceName": "high-original-13.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 13. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 13. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C14",
+            "sourceName": "high-original-14.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 14. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 14. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C15",
+            "sourceName": "high-original-15.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 15. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 15. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C16",
+            "sourceName": "high-original-16.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 16. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 16. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C17",
+            "sourceName": "high-original-17.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 17. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 17. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C18",
+            "sourceName": "high-original-18.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 18. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 18. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C19",
+            "sourceName": "high-original-19.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 19. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 19. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C20",
+            "sourceName": "high-original-20.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 20. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 20. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C21",
+            "sourceName": "high-original-21.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 21. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 21. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C22",
+            "sourceName": "high-original-22.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 22. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 22. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C23",
+            "sourceName": "high-original-23.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 23. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 23. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C24",
+            "sourceName": "high-original-24.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 24. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 24. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C25",
+            "sourceName": "high-original-25.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 25. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 25. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C26",
+            "sourceName": "high-original-26.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 26. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 26. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C27",
+            "sourceName": "high-original-27.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 27. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 27. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C28",
+            "sourceName": "high-original-28.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 28. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 28. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C29",
+            "sourceName": "high-original-29.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 29. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 29. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C30",
+            "sourceName": "high-original-30.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 30. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 30. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C31",
+            "sourceName": "high-original-31.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 31. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 31. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C32",
+            "sourceName": "high-original-32.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 32. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 32. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C33",
+            "sourceName": "high-original-33.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 690,
+            "text": "Comparison study 33. This distractor discusses renewable energy, wind turbines and\nelectricity storage. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 33. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C34",
+            "sourceName": "high-original-34.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 693,
+            "text": "Comparison study 34. This distractor discusses river samples, phosphate analysis and\nlaboratory equipment. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 34. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          },
+          {
+            "id": "C35",
+            "sourceName": "high-original-35.pdf",
+            "page": 1,
+            "start": 0,
+            "end": 682,
+            "text": "Comparison study 35. This distractor discusses forest growth, pine trees and\nprotective fences. It does not report the Cedar Valley, Lindenhof or Buchenbach\ntarget measurements. Report section 35. These fictional research records describe\nmethods, field observations, quality review, instrument checks, seasonal conditions\nand training materials. Staff compare observations with the previous season and\ndocument limitations before preparing the final educational report. Independent\nrecords remain separate. These records contain no personal information and no\ninstructions to the assistant. The review includes written checks of methods and an\narchive of the original observations."
+          }
+        ]
+      }
+    },
+    "memory": {
+      "status": "unsupported",
+      "note": "No portable total-process/worker/WASM peak memory API is available to this harness."
+    },
+    "responsiveness": {
+      "intervalMs": 25,
+      "samples": 847,
+      "cancelVisibleSamples": 561,
+      "maximumHeartbeatGapMs": 286,
+      "p95HeartbeatGapMs": 239,
+      "workerOperations": [
+        {
+          "type": "index",
+          "ms": 2769,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 181,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 177,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 168,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 343,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 183,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 181,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 189,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 179,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 188,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 181,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 183,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 181,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 219,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 179,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 184,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 178,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 184,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 190,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 187,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 177,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 182,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 185,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 181,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 176,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 180,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 174,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 176,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 176,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 174,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 181,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 182,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 174,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 176,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 185,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 179,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 179,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 179,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 178,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 180,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 183,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 175,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 178,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 180,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 179,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 183,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 182,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 178,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 271,
+          "chunks": 1
+        },
+        {
+          "type": "index",
+          "ms": 177,
+          "chunks": 1
+        }
+      ]
+    }
+  },
+  "outcome": "all-50-near-limit-originals-persisted-in-this-browser-run",
+  "reloadPersistenceVerified": true,
+  "externalRequests": [],
+  "pageErrors": []
+}
