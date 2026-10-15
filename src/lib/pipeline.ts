@@ -23,6 +23,20 @@ export class LocalPipeline {
     const id = ++this.sequence;
     return new Promise((resolve, reject) => {
       let settled = false;
+      // The watchdog bounds wedged jobs, not total work: it resets whenever the
+      // worker reports progress, so long-but-progressing indexing of sources
+      // within the documented limits is never killed mid-flight.
+      const WATCHDOG_TIMEOUT = 300_000;
+      const onTimeout = () => {
+        finish(localizedError('runtime.pipelineTimeout'));
+        worker.terminate();
+        if (this.worker === worker) this.worker = null;
+      };
+      let timer = setTimeout(onTimeout, WATCHDOG_TIMEOUT);
+      const resetWatchdog = () => {
+        clearTimeout(timer);
+        timer = setTimeout(onTimeout, WATCHDOG_TIMEOUT);
+      };
       const finish = (error?: Error, result?: T) => {
         if (settled) return;
         settled = true;
@@ -34,16 +48,11 @@ export class LocalPipeline {
         if (error) reject(error); else resolve(result as T);
       };
       const abort = () => this.cancel();
-      const timer = setTimeout(() => {
-        finish(localizedError('runtime.pipelineTimeout'));
-        worker.terminate();
-        if (this.worker === worker) this.worker = null;
-      }, 300_000);
       this.active = { id, reject: error => finish(error) };
       signal.addEventListener('abort', abort, { once: true });
       worker.onmessage = event => {
         if (event.data.id !== id) return;
-        if (event.data.progress) onProgress(localizedProgress(event.data.progress));
+        if (event.data.progress) { resetWatchdog(); onProgress(localizedProgress(event.data.progress)); }
         else if (event.data.error) {
           // Initialization errors can leave ONNX/Pdfium promises or runtime state poisoned.
           // A new request gets a fresh Worker, while successful asset caches remain reusable.

@@ -46,7 +46,9 @@ for (const instrumented of [true, false]) test(`strict-CSP PDF/MD/TXT, cold/warm
     await expect(page.getByRole('alert')).toBeVisible(); await expect(page.locator('.source-open')).toHaveCount(0);
     await page.getByRole('button', { name: 'Dismiss error', exact: true }).click();
     await upload(page, [fixture('02-wasserlabor.pdf')]);
-    await expect(page.locator('.source-open')).toHaveCount(1);
+    // Firefox default profiles may not retain the 118-MB model in CacheStorage
+    // (per-entry quota), so the retry re-downloads it and needs more time.
+    await expect(page.locator('.source-open')).toHaveCount(1, { timeout: info.project.name === 'firefox' ? 150_000 : 30_000 });
     await upload(page, [{ name: 'probe.md', mimeType: 'text/markdown', buffer: Buffer.from('# Storage\nSamples are kept at four degrees Celsius.') },
       { name: 'probe.txt', mimeType: 'text/plain', buffer: Buffer.from('The laboratory opens at nine in the morning.') }]);
     await expect(page.locator('.source-open')).toHaveCount(3);
@@ -66,7 +68,12 @@ for (const instrumented of [true, false]) test(`strict-CSP PDF/MD/TXT, cold/warm
     await page.reload(); await expect(page.locator('.source-open')).toHaveCount(3);
     await page.getByRole('button', { name: 'Local search', exact: true }).click();
     await page.locator('#question').fill('When does the laboratory open?'); await page.locator('#question').press('Enter');
-    await expect(page.locator('.search-result').first()).toContainText('nine'); expect(modelGets).toBe(before);
+    await expect(page.locator('.search-result').first()).toContainText('nine');
+    // Chromium retains the immutable model across reloads. Firefox default
+    // profiles can re-download it (CacheStorage per-entry quota); per-profile
+    // retention is explicitly not guaranteed (docs/verification.md).
+    if (info.project.name === 'firefox') expect(modelGets).toBeLessThanOrEqual(before + 1);
+    else expect(modelGets).toBe(before);
     await page.unroute(`**${modelPath}`);
     // Clear only this isolated origin's model cache and hold the next cold download.
     await page.evaluate(async () => { for (const key of await caches.keys()) await caches.delete(key); });

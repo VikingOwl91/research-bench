@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 import { resolve } from 'node:path';
+import { requireAudioBackend } from './audio-backend';
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
 const endpoint = 'https://api.eu.mistral.ai/v1/chat/completions';
@@ -58,13 +59,14 @@ test('source-reference limits remain visible in EN/DE chat and every Studio tab 
     for (const language of ['en', 'de'] as const) {
       await page.locator('#interface-language').selectOption(language);
       const english = language === 'en';
-      const limitation = english ? 'factual support is not automatically verified' : 'die inhaltliche Belegbarkeit wird nicht automatisch geprüft';
-      const unsupported = english ? 'unsupported claims' : 'unbelegte Aussagen';
+      const limitation = english ? 'it does not verify factual support' : 'sie prüft keine inhaltliche Belegbarkeit';
+      const unsupported = english ? 'Unsupported claims' : 'Unbelegte Aussagen';
       if (width === 390) await page.locator('.mobile-navigation').getByRole('button', { name: english ? 'Research' : 'Recherche', exact: true }).click();
       await expect(page.locator('.local-pill')).toHaveText(english ? 'Source references' : 'Quellenverweise');
       await expect(page.locator('.composer-footnote')).toBeVisible();
       await expect(page.locator('.composer-footnote')).toContainText(limitation);
       await expect(page.locator('.composer-footnote')).toContainText(unsupported);
+      await expect(page.locator('.composer-footnote')).toContainText(english ? 'supported wording can be removed' : 'belegte Formulierungen entfernt werden');
       if (width === 390) await page.locator('.mobile-navigation').getByRole('button', { name: 'Studio', exact: true }).click();
       for (const tab of [english ? 'Overview' : 'Überblick', 'FAQ', english ? 'Learn' : 'Lernen', 'Podcast']) {
         await page.locator('.generator-tabs').getByRole('button', { name: tab, exact: true }).click();
@@ -157,6 +159,7 @@ function wav() {
   return bytes.toString('base64');
 }
 test('podcast speech stays independently English; locale switching preserves rendering and active playback', async ({ page }) => {
+  await requireAudioBackend(page);
   await ready(page); await source(page); await key(page);
   await page.route('https://api.eu.mistral.ai/v2/audio/voices**', route => route.fulfill({ headers: cors, json: { data: [{ type: 'preset', slug: 'gb_oliver_curious', id: 'oliver' }, { type: 'preset', slug: 'gb_jane_neutral', id: 'jane' }], next_page_token: null } }));
   let scriptCalls = 0, speechCalls = 0, first: Route | undefined;

@@ -80,7 +80,9 @@ describe('controller job identity and cancellation', () => {
     expect(signal?.aborted).toBe(true);
     gate.resolve(); await asking;
     expect((await storage.loadNotebook(state.activeNotebook!.id)).messages).toEqual([]);
-    expect(state.messages).toEqual([]); expect(state.error).toBeNull();
+    expect(state.messages).toEqual([]);
+    // RB-RT-009: switching the provider discards the in-flight answer with a notice.
+    expect(state.errorMessage?.key).toBe('runtime.staleAbort');
   });
   it.each(['cancel', 'delete', 'switch', 'provider', 'clear'] as const)('does not resurrect a pending import after %s', async action => {
     const pending = deferred<IndexResult>();
@@ -103,7 +105,10 @@ describe('controller job identity and cancellation', () => {
     expect(await storage.chunks(id)).toEqual([]);
     expect(state.sources).toEqual([]);
     expect(state.busy).toBe(false);
-    expect(state.error).toBeNull();
+    // RB-RT-009: state changes that discard an in-flight job explain themselves;
+    // an explicit cancel stays silent.
+    if (action === 'switch' || action === 'provider') expect(state.errorMessage?.key).toBe('runtime.staleAbort');
+    else expect(state.error).toBeNull();
     if (action === 'delete' || action === 'clear') expect((await storage.loadNotebook(id)).notebook).toBeNull();
   });
   it.each(['cancel', 'delete-source', 'delete-notebook', 'provider', 'key', 'clear'] as const)('does not save a late chat response after %s', async action => {
@@ -122,7 +127,31 @@ describe('controller job identity and cancellation', () => {
     expect(request.signal.aborted).toBe(true);
     pending.resolve(answer); await asking;
     expect((await storage.loadNotebook(id)).messages).toEqual([]);
-    expect(state.messages).toEqual([]); expect(state.busy).toBe(false); expect(state.error).toBeNull();
+    expect(state.messages).toEqual([]); expect(state.busy).toBe(false);
+    // RB-RT-009: deleting a source, switching the provider or replacing the key
+    // discards the in-flight answer with a visible notice; explicit cancel,
+    // notebook deletion and wipe stay silent.
+    if (action === 'delete-source' || action === 'provider' || action === 'key') expect(state.errorMessage?.key).toBe('runtime.staleAbort');
+    else expect(state.error).toBeNull();
+  });
+  it('explains when a cross-tab source change discards an in-flight answer (RB-RT-009)', async () => {
+    await readySource();
+    const pending = deferred<GroundedAnswer>(); generate.mockReturnValueOnce(pending.promise);
+    const id = state.activeNotebook!.id;
+    const asking = controller.ask('Was steht in der Quelle?');
+    await vi.waitFor(() => expect(generate).toHaveBeenCalledTimes(1));
+    // Another tab adds a source: the stored revision advances and this tab refreshes.
+    const otherStorage = new BenchStorage();
+    try {
+      const other = new ResearchBenchController(otherStorage, new TestPipeline(), generate);
+      await other.initialize();
+      await other.importFiles([file()]);
+      await (controller as unknown as { refresh: () => Promise<void> }).refresh();
+    } finally { await otherStorage.close(); }
+    pending.resolve(answer); await asking;
+    expect((await storage.loadNotebook(id)).messages).toEqual([]);
+    expect(state.messages).toEqual([]);
+    expect(state.errorMessage?.key).toBe('runtime.staleAbort');
   });
   it('does not save a late Studio result after notebook switch', async () => {
     await readySource();

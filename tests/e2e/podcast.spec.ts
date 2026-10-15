@@ -2,6 +2,7 @@ import { test, expect, type Page, type Route } from '@playwright/test';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { Mp3Encoder } from '@breezystack/lamejs';
+import { requireAudioBackend } from './audio-backend';
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
 const chatEndpoint = /https:\/\/(?:api\.eu\.mistral\.ai|openrouter\.ai)\/.*chat\/completions/;
 const voiceEndpoint = /https:\/\/api\.eu\.mistral\.ai\/v2\/audio\/voices/;
@@ -61,6 +62,7 @@ async function podcastTab(page: Page) {
 }
 
 test('podcast WAV to actual MP3 worker, contribution timeline, download, reload, citations and deletion', async ({ page }) => {
+  await requireAudioBackend(page);
   const requests: any[] = [];
   await mocks(page, async route => { const body = route.request().postDataJSON(); requests.push(body); expect(body.response_format).toBe('wav'); expect(body.input).not.toContain('C1'); expect(route.request().headers().authorization).toBe(`Bearer ${testKey}`); await speech(route); });
   await ready(page); await source(page); await saveKey(page); await podcastTab(page);
@@ -190,6 +192,7 @@ async function artifactTelemetry(page: Page) {
 }
 
 test('OpenRouter actual MP3 decode and resample, stale ready episode, and saved playback without Web Locks', async ({ page }) => {
+  await requireAudioBackend(page);
   const rawMp3 = mp3Tone();
   let speechCalls = 0;
   await mocks(page);
@@ -251,6 +254,7 @@ test('genuine two-tab lock contention and owner close allow explicit takeover of
 });
 
 test('five-minute 24-contribution browser encoding budget and prompt cancellation preserve ready episode', async ({ page }) => {
+  await requireAudioBackend(page);
   const longTone = wavTone(12.3275, 48000);
   await mocks(page, route => route.fulfill({ headers: cors, json: { audio_data: longTone } }));
   await page.route(chatEndpoint, async route => {

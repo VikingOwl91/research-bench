@@ -164,7 +164,9 @@ describe('BYOK changes invalidate every asynchronous podcast stage', () => {
       if (change === 'provider') controller.setProvider('openrouter'); else controller.setKey(change === 'remove' ? '' : 'new-dummy-key');
       expect(signal.aborted).toBe(true); expect(cancelAudio).toHaveBeenCalled();
       gate.resolve(); await running;
-      expect(synthesizeTurn).toHaveBeenCalledTimes(before); expect(state.busy).toBe(false); expect(state.error).toBeNull();
+      expect(synthesizeTurn).toHaveBeenCalledTimes(before); expect(state.busy).toBe(false);
+      // RB-RT-009: key/provider changes discard the in-flight podcast with a visible notice.
+      expect(state.errorMessage?.key).toBe('runtime.staleAbort');
       const artifacts = (await storage.loadNotebook(state.activeNotebook!.id)).artifacts;
       expect(artifacts.some(a => a.kind === 'podcast' && a.status === 'ready')).toBe(false);
       for (const a of artifacts) if (a.kind === 'podcast') expect(await storage.loadPodcastSegments(a.id)).toHaveLength(stage === 'render' || stage === 'finalize' ? 4 : 0);
@@ -199,5 +201,54 @@ describe('cross-tab persisted guards and late render results', () => {
     gate.resolve(); await running;
     expect(await storage.getPodcastAudio(episode.id)).toBeNull();
     expect((await storage.loadNotebook(episode.notebookId)).artifacts[0]).toMatchObject({ renderId: 'new-owner', status: 'rendering' });
+  });
+});
+
+describe('persisted podcast support checks before resume', () => {
+  async function pausedDraft(change: (episode: PodcastArtifact) => void) {
+    const n = state.activeNotebook!, source = state.sources[0];
+    const text = source.pages[0].text;
+    const episode: PodcastArtifact = {
+      id: crypto.randomUUID(), notebookId: n.id, revision: n.revision, kind: 'podcast', createdAt: Date.now(),
+      script: script('en'), citations: [{ id: 'C1', sourceId: source.id, sourceName: source.name, page: 1, start: 0, end: text.length, text }],
+      coverage: { selectedCharacters: text.length, totalCharacters: text.length, selectedSources: 1, totalSources: 1, limited: false },
+      provider: 'mistral', model: 'mistral-small-2603', audioConfig: config(), status: 'rendering', renderId: 'legacy-render', completedTurnIds: []
+    };
+    change(episode);
+    const saved = await storage.createPodcastCandidate(episode, await storage.getDataEpoch());
+    await storage.savePodcastSegment(saved.fence, prepared('T1'));
+    await storage.releasePodcastRender(saved.fence);
+    controller = createController(); await controller.initialize();
+    return (await storage.loadNotebook(n.id)).artifacts.find(a => a.id === episode.id) as PodcastArtifact;
+  }
+  it.each([0, 1])('rejects unsupported turn %i, including cached audio, without rewriting the draft', async index => {
+    const before = await pausedDraft(episode => { episode.script.turns[index].text = 'The nitrate safety limit is 99 mg/L.'; });
+    const segments = await storage.loadPodcastSegments(before.id);
+    await controller.resumePodcast(before.id);
+    expect(state.errorMessage?.key).toBe('runtime.podcastResumeUnsupported');
+    expect(generateScript).not.toHaveBeenCalled(); expect(synthesizeTurn).not.toHaveBeenCalled(); expect(render).not.toHaveBeenCalled();
+    const after = (await storage.loadNotebook(before.notebookId)).artifacts.find(a => a.id === before.id);
+    expect(after).toEqual(before);
+    expect(await storage.loadPodcastSegments(before.id)).toEqual(segments);
+  });
+  it.each(['missing-context', 'empty-evidence', 'unknown-id', 'uncited-unsupported'] as const)('fails closed for %s before TTS', async kind => {
+    const before = await pausedDraft(episode => {
+      if (kind === 'missing-context') episode.citations = [];
+      else if (kind === 'empty-evidence') episode.citations[0].text = ' ';
+      else if (kind === 'unknown-id') episode.script.turns[1].citationIds = ['C99'];
+      else { episode.script.turns[1].text = 'The nitrate safety limit is 99 mg/L.'; episode.script.turns[1].citationIds = []; }
+    });
+    await controller.resumePodcast(before.id);
+    expect(state.errorMessage?.key).toBe('runtime.podcastResumeUnsupported');
+    expect(synthesizeTurn).not.toHaveBeenCalled();
+    expect((await storage.loadNotebook(before.notebookId)).artifacts.find(a => a.id === before.id)).toEqual(before);
+    expect(await storage.loadPodcastSegments(before.id)).toHaveLength(1);
+  });
+  it('resumes supported persisted text and preserves cached segments', async () => {
+    const before = await pausedDraft(() => {});
+    await controller.resumePodcast(before.id);
+    expect(state.error).toBeNull(); expect(podcasts()[0].status).toBe('ready');
+    expect(generateScript).not.toHaveBeenCalled(); expect(synthesizeTurn).toHaveBeenCalledTimes(3);
+    expect(synthesizeTurn.mock.calls.map(([request]) => request.text)).toEqual(before.script.turns.slice(1).map(turn => turn.text));
   });
 });

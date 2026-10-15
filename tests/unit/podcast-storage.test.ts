@@ -11,7 +11,7 @@ function draft(n: Notebook, language: 'de' | 'en' = 'de'): PodcastArtifact {
   return { id: crypto.randomUUID(), notebookId: n.id, revision: n.revision, kind: 'podcast', createdAt: Date.now(),
     script: { title: 'Gespräch', language, turns: [
       { id: 'T1', speaker: 'A', text: 'Eine Frage.', citationIds: [] }, { id: 'T2', speaker: 'B', text: 'Eine Antwort.', citationIds: [] }
-    ] }, citations: [], coverage: { selectedCharacters: 0, totalCharacters: 0, selectedSources: 0, totalSources: 0, limited: false },
+    ] }, citations: [{ id: 'C1', sourceId: 'fictional', sourceName: 'fictional.txt', page: 1, start: 0, end: 25, text: 'Eine Frage. Eine Antwort.' }], coverage: { selectedCharacters: 0, totalCharacters: 0, selectedSources: 0, totalSources: 0, limited: false },
     provider: 'mistral', model: 'script-model', audioConfig: { provider: 'mistral', model: 'tts-model',
       voices: { A: { id: 'a', slug: 'a' }, B: { id: 'b', slug: 'b' } }, format: 'wav', encoderVersion: 'test', pauseMs: 200 },
     status: 'rendering', renderId: crypto.randomUUID(), completedTurnIds: [] };

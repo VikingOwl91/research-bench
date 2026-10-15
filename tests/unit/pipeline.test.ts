@@ -45,3 +45,41 @@ describe('local Worker recovery', () => {
     expect(second.terminate).not.toHaveBeenCalled();
   });
 });
+
+describe('progress-resetting watchdog (RB-RT-006)', () => {
+  it('does not kill a job that keeps reporting progress', async () => {
+    vi.useFakeTimers();
+    try {
+      const signal = new AbortController().signal;
+      const progress = vi.fn();
+      const pending = pipeline.search(new Float32Array(384), 'Suche', undefined, 6, signal, progress);
+      const worker = FakeWorker.instances[0];
+      const id = worker.postMessage.mock.calls[0][0].id;
+      // Twenty minutes of work with progress every four minutes must not trip the watchdog.
+      for (let round = 0; round < 5; round++) {
+        await vi.advanceTimersByTimeAsync(240_000);
+        worker.emit({ id, progress: { stage: 'Quellen werden lokal indexiert', current: round, total: 5 } });
+      }
+      await vi.advanceTimersByTimeAsync(240_000);
+      worker.emit({ id, result: [{ index: 0, score: 1 }] });
+      await expect(pending).resolves.toEqual([{ index: 0, score: 1 }]);
+      expect(worker.terminate).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('still kills a wedged worker that stops reporting progress', async () => {
+    vi.useFakeTimers();
+    try {
+      const signal = new AbortController().signal;
+      const pending = pipeline.search(new Float32Array(384), 'Suche', undefined, 6, signal, vi.fn());
+      // Attach the rejection handler before advancing time so the rejection is never unhandled.
+      const assertion = expect(pending).rejects.toThrow(/fünf Minuten/);
+      const worker = FakeWorker.instances[0];
+      const id = worker.postMessage.mock.calls[0][0].id;
+      worker.emit({ id, progress: { stage: 'Vorbereitung', current: 0, total: 1 } });
+      await vi.advanceTimersByTimeAsync(300_000);
+      await assertion;
+      expect(worker.terminate).toHaveBeenCalledTimes(1);
+    } finally { vi.useRealTimers(); }
+  });
+});

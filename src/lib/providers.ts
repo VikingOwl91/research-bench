@@ -3,6 +3,7 @@ import { runtimeErrorDescriptor } from './i18n/runtime-errors';
 import { z } from './schema';
 import { ENDPOINTS, MODEL_IDS } from './constants';
 import { GROUNDING_INSTRUCTIONS } from './grounding-instructions';
+import { applySupportGate, sanitizeForModel } from './support-gate';
 import type { ChatMessage, Citation, GeneratorKind, GroundedAnswer, Provider } from './types';
 
 export class GenerationError extends Error {
@@ -83,7 +84,9 @@ Gib JSON gemäß Schema zurück: title und blocks mit heading, text und citation
     content: JSON.stringify({
       task: request.kind === 'chat' ? request.question : tasks[request.kind],
       conversationHistory: (request.history ?? []).slice(-8).map(entry => ({ role: entry.role, text: entry.text.slice(0, 3000) })),
-      sources: request.citations.map(c => ({ id: c.id, page: c.page, text: c.text }))
+      // Instruction-like sentences in untrusted documents are neutralized before
+      // they enter the prompt; the support gate below checks against the same text.
+      sources: request.citations.map(c => ({ id: c.id, page: c.page, text: sanitizeForModel(c.text) }))
     })
   });
   const body: Record<string, unknown> = {
@@ -129,9 +132,15 @@ export async function generateAnswer(request: GenerationRequest, fetcher: typeof
   try { payload = await response.json(); } catch { throw new GenerationError('Die API hat keine gültige JSON-Antwort geliefert.', 'invalid_response'); }
   const envelope = z.object({ choices: z.array(z.object({ message: z.object({ content: z.string() }), finish_reason: z.string().nullable().optional() })).min(1) }).safeParse(payload);
   if (!envelope.success || envelope.data.choices[0].finish_reason === 'length') throw new GenerationError('Die API-Antwort ist unvollständig. Bitte erneut generieren.', 'invalid_response');
-  try { return validateAnswer(JSON.parse(envelope.data.choices[0].message.content), request.citations); }
+  let answer: GroundedAnswer;
+  try { answer = validateAnswer(JSON.parse(envelope.data.choices[0].message.content), request.citations); }
   catch (error) {
     if (error instanceof GenerationError) throw error;
     throw new GenerationError('Die Antwort enthält kein gültiges strukturiertes JSON. Bitte erneut generieren.', 'invalid_response');
   }
+  // Deterministic support gate: blocks whose checkable specifics are absent from
+  // their cited excerpts are quarantined before the answer is returned (and
+  // thereby before it is persisted or displayed as source-supported).
+  const notice = translateMessage(request.language ?? 'en', message('runtime.unsupportedSectionRemoved'));
+  return applySupportGate(answer, request.citations, notice).value;
 }

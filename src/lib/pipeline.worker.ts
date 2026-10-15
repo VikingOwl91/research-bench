@@ -54,10 +54,26 @@ function initModel() {
     // Transformers 4.3.1's progress reader repeatedly reallocates unknown-length
     // compressed responses (quadratic copying, especially in Firefox). The normal
     // arrayBuffer path preserves response/cache semantics and needs no fake headers.
-    tokenizer = await AutoTokenizer.from_pretrained('multilingual-e5-small', { local_files_only: true });
-    extractor = await pipeline('feature-extraction', 'multilingual-e5-small', {
-      device: 'wasm', dtype: 'q8', local_files_only: true
-    });
+    const load = async () => {
+      tokenizer = await AutoTokenizer.from_pretrained('multilingual-e5-small', { local_files_only: true });
+      extractor = await pipeline('feature-extraction', 'multilingual-e5-small', {
+        device: 'wasm', dtype: 'q8', local_files_only: true
+      });
+    };
+    try {
+      await load();
+    } catch (error) {
+      // Some browsers (notably Firefox default profiles) reject the 118-MB model's
+      // CacheStorage entry with QuotaExceededError, which fails the whole load on
+      // the streaming cache path. Retry once without the Cache API: the model then
+      // loads via the immutable HTTP cache or a direct fetch. Retention stays
+      // best-effort, as documented in docs/verification.md.
+      const quota = error instanceof DOMException && error.name === 'QuotaExceededError'
+        || /quota/i.test(String((error as Error)?.message ?? ''));
+      if (!quota) throw error;
+      env.useBrowserCache = false;
+      await load();
+    }
   })();
 }
 
