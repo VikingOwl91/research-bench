@@ -12,14 +12,18 @@ in a public issue. Reports should use fictional data and include the affected
 commit/build identity, browser/version, minimal steps, expected/actual behavior
 and impact. Never include API keys or personal data.
 
-**Before public publication, the maintainer must enable and verify GitHub private
-vulnerability reporting**, or publish a verified private security contact. The
-private-repository API check during v0.1.0 preparation did not establish that
-private reporting is available. This document does not claim an operational
-private reporting channel yet. Once enabled, use the repository's **Security →
-Report a vulnerability** action. If that action is unavailable, do not post
+GitHub private vulnerability reporting is available for public repositories.
+**Immediately after separately authorized public conversion, the maintainer
+must enable and verify it before announcing the release.** The repository is
+currently private; this policy does not claim an operational reporting channel.
+Once enabled, use **Security → Advisories → Report a vulnerability**. If that
+action is unavailable, do not post
 sensitive details publicly; request a private reporting channel from the
 maintainer without disclosing the vulnerability.
+
+The maintainer must check the reporting form from a separate authenticated
+account and verify security-notification settings. See GitHub's
+[configuration instructions](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository).
 
 No response-time or remediation SLA is promised for this prototype.
 
