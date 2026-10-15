@@ -142,6 +142,19 @@ export type Artifact = TextArtifact | PodcastArtifact;
 export interface SearchHit { chunk: Chunk; sourceName: string; score: number; }
 export interface Progress { stage: string; current: number; total: number; detail?: string; stageMessage?: MessageDescriptor; detailMessage?: MessageDescriptor; }
 export interface SourceSelection { source: Source; citation?: Citation; }
+/** Transient import reporting only; never persisted in IndexedDB. */
+export interface ImportFileOutcome {
+  name: string;
+  status: 'pending' | 'importing' | 'imported' | 'failed' | 'canceled' | 'not-attempted';
+  errorMessage?: MessageDescriptor;
+}
+export interface ImportBatch {
+  id: number;
+  notebookId: string;
+  remainingAtStart: number;
+  status: 'running' | 'complete' | 'failed' | 'canceled' | 'capacity';
+  files: ImportFileOutcome[];
+}
 export interface AppSnapshot {
   notebooks: Notebook[];
   activeNotebook: Notebook | null;
@@ -155,4 +168,5 @@ export interface AppSnapshot {
   hasKey: boolean;
   error: string | null;
   errorMessage?: MessageDescriptor | null;
+  importBatch?: ImportBatch | null;
 }

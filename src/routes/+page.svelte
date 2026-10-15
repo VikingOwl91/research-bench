@@ -4,6 +4,7 @@
 <script lang="ts">
   const sourceArchive = `/source/researchbench-${__SOURCE_COMMIT__}.tar.gz`;
   const sourceLicense = `/source/researchbench-${__SOURCE_COMMIT__}.license.txt`;
+  import { LIMITS } from '#lib/constants.ts';
   import { displaySourceName } from '#lib/display-source-name.ts';
   import { displaySearchSnippet } from '#lib/display-search-snippet.ts';
   import { serializeRetrievalContext } from '#lib/retrieval-context-export.ts';
@@ -53,6 +54,10 @@
   $: artifact = state.artifacts.find((item): item is TextArtifact => item.kind !== 'podcast' && item.kind === generator);
   $: availableSourceIds = state.sources.map((source) => source.id);
   $: staleArtifact = !!(artifact && artifact.revision !== state.activeNotebook?.revision);
+  $: remainingSources = Math.max(0, LIMITS.sources - state.sources.length);
+  $: canImport = ready && !state.busy && !!state.activeNotebook && remainingSources > 0;
+  $: importBatch = state.importBatch?.notebookId === state.activeNotebook?.id ? state.importBatch : null;
+  $: importCounts = { imported: importBatch?.files.filter(file => file.status === 'imported').length ?? 0, failed: importBatch?.files.filter(file => file.status === 'failed').length ?? 0, canceled: importBatch?.files.filter(file => file.status === 'canceled').length ?? 0, notAttempted: importBatch?.files.filter(file => file.status === 'not-attempted').length ?? 0 };
   $: canGenerate = ready && !state.busy && state.hasKey && state.sources.length > 0;
   $: if (state.messages.length !== previousMessageCount) {
     previousMessageCount = state.messages.length;
@@ -156,11 +161,23 @@
         {#if !state.notebooks.length && !notebookEditing}<div class="notebook-empty"><p>{$t('page.notebookEmpty')}</p><button class="button secondary full-width" onclick={() => beginNotebook('create')} disabled={!ready}><Plus size={15}/>{$t('page.createNotebook')}</button></div>{/if}
       </div>
 
-      <div class="sources-label"><span class="eyebrow">{$t('page.sourcesEyebrow')}</span><span class="count-badge">{formatNumber($locale, state.sources.length)}</span></div>
+      <div class="sources-label"><span class="eyebrow">{$t('page.sourcesEyebrow')}</span><output class="count-badge" aria-label={$t('page.sourceCapacity', { used: state.sources.length, limit: LIMITS.sources })}>{formatNumber($locale, state.sources.length)} / {formatNumber($locale, LIMITS.sources)}</output></div>
+      <div class="source-capacity">
+        <p id="source-capacity-note" aria-live="polite">{$t(remainingSources === 0 ? 'page.sourceCapacityFull' : remainingSources === 1 ? 'page.sourceFinalSlot' : 'page.sourceSlotsRemaining', { count: remainingSources })}</p>
+        <div class="source-capacity-actions"><button class="button secondary small-button" type="button" disabled={!canImport} aria-describedby="source-capacity-note" onclick={() => fileInput.click()}><Plus size={14}/>{$t('page.addSources')}</button><button class="text-button" type="button" disabled={state.busy || !ready || !state.activeNotebook} onclick={() => controller.refreshSources()} title={$t('page.sourceRefreshHint')}>{$t('page.refreshSources')}</button></div>
+        <input hidden id="source-upload" bind:this={fileInput} type="file" multiple accept=".pdf,.md,.txt,application/pdf,text/plain,text/markdown" disabled={!canImport} aria-label={$t('page.uploadSources')} onchange={(event) => { if (event.currentTarget.files) upload(event.currentTarget.files); event.currentTarget.value = ''; }}/>
+      </div>
+      {#if importBatch}
+        <div class="import-report">
+          <div role="status" aria-live="polite" aria-atomic="true"><strong>{$t(importBatch.status === 'running' ? 'page.importRunning' : importBatch.status === 'complete' ? 'page.importComplete' : importBatch.status === 'canceled' ? 'page.importCanceled' : importBatch.status === 'capacity' ? 'page.importCapacity' : 'page.importStopped')}</strong><p>{$t('page.importCounts', importCounts)}</p></div>
+          {#if importBatch.files.length > importBatch.remainingAtStart}<p class="import-warning">{$t('page.importCapacityWarning', { selected: importBatch.files.length, remaining: importBatch.remainingAtStart })}</p>{/if}
+          <details><summary>{$t('page.importFileResults', { count: importBatch.files.length })}</summary><ul>{#each importBatch.files as file}<li><bdi>{displaySourceName(file.name)}</bdi><span>{$t(file.status === 'imported' ? 'page.importFileImported' : file.status === 'failed' ? 'page.importFileFailed' : file.status === 'canceled' ? 'page.importFileCanceled' : file.status === 'not-attempted' ? 'page.importFileNotAttempted' : file.status === 'importing' ? 'page.importFileImporting' : 'page.importFilePending')}</span>{#if file.errorMessage}<small>{ $t(file.errorMessage.key, file.errorMessage.params) }</small>{/if}</li>{/each}</ul></details>
+        </div>
+      {/if}
       <div class="source-list">{#each state.sources as source}<div class="source-row" class:selected={selectedSource?.id === source.id}><button class="source-open" onclick={() => showSource(source)}><span class="file-icon"><FileText size={18}/></span><span><strong><bdi>{displaySourceName(source.name)}</bdi></strong><small>{source.kind.toUpperCase()} · {formatSize($locale, source.size)} · {$t(source.chunkCount === 1 ? 'page.chunkCountOne' : 'page.chunkCountMany', { count: source.chunkCount })}</small></span></button><button class="icon-button source-remove" onclick={() => requestDelete('source', source.name, source.id)} aria-label={$t('page.deleteNamedSource', { name: displaySourceName(source.name) })}><X size={13}/></button></div>{/each}</div>
       <div class="upload-section">
-        <div class="dropzone" class:dragging role="region" aria-label={$t('page.uploadSources')} ondragover={(event) => { event.preventDefault(); dragging = true; }} ondragleave={() => dragging = false} ondrop={onDrop}>
-          <span class="upload-icon"><Upload size={20}/></span><strong>{$t('page.addKnowledge')}</strong><p>{$t('page.dropFiles')}<br/>{$t('page.chooseFiles')}</p><label class="button secondary small-button" class:disabled={state.busy || !state.activeNotebook} for="source-upload"><Plus size={14}/>{$t('page.addSources')}</label><input class="visually-hidden" id="source-upload" bind:this={fileInput} type="file" multiple accept=".pdf,.md,.txt,application/pdf,text/plain,text/markdown" disabled={state.busy || !state.activeNotebook} onchange={(event) => { if (event.currentTarget.files) upload(event.currentTarget.files); event.currentTarget.value = ''; }}/><small>{$t('page.uploadFormats')}</small>
+        <div class="dropzone" class:dragging={dragging && canImport} aria-describedby="source-capacity-note" role="region" aria-label={$t('page.uploadSources')} ondragover={(event) => { event.preventDefault(); dragging = true; }} ondragleave={() => dragging = false} ondrop={onDrop}>
+          <span class="upload-icon"><Upload size={20}/></span><strong>{$t('page.addKnowledge')}</strong><p>{$t('page.dropFiles')}<br/>{$t('page.chooseFilesAbove')}</p><small>{$t('page.uploadFormats')}</small>
         </div>
         <p class="download-note">{$t('page.downloadNote')}</p>
       </div>

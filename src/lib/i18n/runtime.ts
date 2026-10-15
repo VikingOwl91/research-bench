@@ -54,8 +54,8 @@ export const runtimeMessages = {
     "de": "Bitte verwende PDF-, Markdown- oder TXT-Dateien."
   },
   "runtime.sourceLimit": {
-    "en": "This notebook already contains ten sources.",
-    "de": "Das Notebook enthält bereits zehn Quellen."
+    "en": "This notebook has reached its limit of {limit} sources. Delete a source or use another notebook.",
+    "de": "Dieses Notebook hat das Limit von {limit} Quellen erreicht. Entferne eine Quelle oder verwende ein weiteres Notebook."
   },
   "runtime.emptyContext": {
     "en": "Fully index a source first.",
@@ -538,8 +538,8 @@ export const runtimeMessages = {
     "de": "Dieser Index verwendet eine andere Modellversion. Bitte entferne die betroffenen Quellen und indexiere sie erneut."
   },
   "runtime.storageNotebookLimit": {
-    "en": "The notebook limit was reached (10 sources, 500,000 characters or 1,000 chunks). Use another notebook.",
-    "de": "Das Notebook-Limit ist erreicht (10 Quellen, 500.000 Zeichen oder 1.000 Chunks). Bitte verwende ein weiteres Notebook."
+    "en": "The notebook limit was reached ({sources} sources, 500,000 characters or 1,000 chunks). Use another notebook.",
+    "de": "Das Notebook-Limit ist erreicht ({sources} Quellen, 500.000 Zeichen oder 1.000 Chunks). Bitte verwende ein weiteres Notebook."
   },
   "runtime.storageIndexIncomplete": {
     "en": "The local index is incomplete; the source was not saved.",

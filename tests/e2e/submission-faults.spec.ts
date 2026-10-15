@@ -166,6 +166,7 @@ test('native import quota preserves source, chunks and revision and permits expl
   await ended(page);
   expect(await page.evaluate(() => (window as any).__quotaHits)).toBe(1);
   expect(await inventory(page)).toEqual(before);
+  await expect(page.locator('.import-report')).toContainText('Imported: 0 · Failed: 1 · Canceled: 0 · Not attempted: 0');
   await page.getByRole('button', { name: 'Dismiss error' }).click();
   await source(page, 'unicode.txt');
   await expect(page.locator('.source-open')).toHaveCount(2);
