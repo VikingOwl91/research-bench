@@ -72,10 +72,11 @@ test('real PDFium + local multilingual embeddings: retrieval, reload, isolation 
   await page.getByRole('button', { name: 'Lokale Suche', exact: true }).click();
   await page.locator('#question').fill('Wie hoch ist der Nitratwert?'); await page.locator('#question').press('Enter');
   await expect(page.locator('.search-result').first()).toContainText('02-wasserlabor.pdf');
-  // Warm reload reads the model from its owned CacheStorage. Chromium retains the
-  // 118-MB model; Firefox default profiles can re-download it (CacheStorage
-  // per-entry quota) — per-profile retention is not guaranteed (docs/verification.md).
-  expect(modelReads).toHaveLength(testInfo.project.name === 'firefox' ? 2 : 1);
+  // Functional warm retrieval is required above. Cache retention is best-effort:
+  // Firefox may retain the model (one GET) or re-download it once after reload.
+  // The explicit-budget security test separately requires actual cache reuse.
+  if (testInfo.project.name === 'firefox') expect([1, 2]).toContain(modelReads.length);
+  else expect(modelReads).toHaveLength(1);
   const firstNotebook = await page.getByRole('combobox', { name: 'Aktives Notebook' }).inputValue();
   await page.getByRole('button', { name: 'Notebook erstellen', exact: true }).click();
   await page.locator('#notebook-name').fill('Getrennte Recherche'); await page.locator('.notebook-form').getByRole('button', { name: 'Speichern' }).click();

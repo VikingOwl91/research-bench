@@ -12,7 +12,171 @@ closed, a bounded residual remains. **OPEN** — not implemented.
 No finding is marked RESOLVED without demonstrated verification. Residual
 risks are stated per finding and are not silently closed.
 
-## Verification summary (re-test of HEAD `5ce5a47` and successors)
+## Review round 2 — 2026-10-15
+
+Starting point: `a512125510094438b9015e1929743d9d642efb95`, branch
+`fix/red-team-v004`. The independent pre-merge verdict was **DO NOT MERGE**.
+All nine findings were independently reproduced on that unchanged candidate
+before production changes. The original audit README, findings and coverage
+remain unchanged. This section supersedes the Round 1 implementation claims;
+it does not rewrite the historical observations below.
+
+### Corrections and permanent regressions
+
+| Review finding | Correction | Permanent regression |
+|---|---|---|
+| R1: 1,000-fold numeric equivalence and formatting errors | Validated whole numeric tokens and exact canonical decimal keys replace punctuation stripping and floating-point tolerance. | Both answer/podcast gate controls in `tests/unit/support-gate.test.ts`: mixed grouping, ambiguous literals, precision, signs, malformed tokens. |
+| R2: parentheses, fullwidth digits, visible angle brackets and ASCII quotes bypass matching | NFKC-normalized displayed/spoken text is checked without stripping angle-bracket content. Parentheses no longer suppress numbers; paired ASCII/typographic quotes are recognized. | Unit negatives plus `tests/security/remediation-round2.spec.ts`: both providers, Chat, Summary, FAQ, Study Guide, podcast TTS, saved transcript/answers, reload and next-turn history. |
+| R3: ordinary possessives remove supported prose | Word apostrophes are separated from paired quotation delimiters; supported controls accompany rejection cases. | Both-gate supported paraphrases, possessives, contractions, plural possessives, adjacent quotations, numerical formatting and headings. Independent review required one further quoted-word/outside-possessive correction. |
+| R4: resumed persisted scripts bypass the current gate | `claimPodcastResume` validates frozen evidence/citation membership and applies the same gate inside its existing fenced transaction, before mutation or new speech. Unsafe or missing-evidence drafts are rejected with a localized regeneration message. | Controller/storage tests preserve cached audio and the paused draft byte-for-byte, including an unsupported already-cached turn. Browser tests for both providers assert zero generation/TTS calls and unchanged stored script/audio after rejected resume/reload. Existing supported resume tests still require missing-segment-only synthesis. |
+| R5: functioning Firefox audio is falsely skipped | Probe awaits bounded initialization/resume and an advancing audio clock. Required playback coverage fails explicitly if unavailable; it never silently skips. | `tests/e2e/audio-backend.spec.ts`: real Chromium/Firefox readiness, delayed initialization, unavailable bounded/closed context. Full E2E must execute the five previously skipped Firefox workflows. |
+| R6: Firefox test requires a cache miss | Warm retrieval remains required; the default-profile check accepts one retained download or one re-download, rejecting unbounded requests. The dedicated explicit-budget retention test stays strict. | Existing `researchbench.spec.ts` reload/retrieval test and unchanged strict retention security test. |
+| R7: quadratic viewer segmentation stalls the main thread | Sorted interval merge/monotonic sweep; provenance decoration is capped at 1,000 incoming spans. Above the cap, all canonical text and citation highlighting remain, with an explicit EN/DE marker-omission notice. | Pure segmentation tests and actual-WASM valid-PDF browser benchmarks at 5,000/50,000 spans, exact text/citation retention and bounded DOM in both browsers. |
+| R8: invisible clipping/transparent paint is unmarked | Classify active fill/stroke channels for modes 0–7, including non-painting mode 7 and zero alpha; unused fill no longer hides visible outlines. | Native paint-channel controls and 13-page actual-Pdfium fixture with mode/alpha combinations in Chromium/Firefox. |
+| R9: definitive invisibility wording mislabels visible text | EN/DE UI describes rendering properties; near-white paint/background uncertainty is explicit. | Viewer provenance/locale browser tests, including visible outlines and white-on-black. |
+
+### Numeric interpretation and deliberate tradeoff
+
+No trustworthy source numeric-locale metadata exists. A lone separator with
+exactly three trailing digits (`1.234` or `1,234`) is ambiguous and therefore
+matches only the **same normalized literal**. It does not match `1234`, the
+other separator, or `1.2340`. The review's proposed decimal-positive example
+`1.234` → `1.2340` assumes a decimal locale: in a German grouping context the
+same conversion changes the mathematical value by 1,000. This conservative
+false positive is accepted explicitly rather than silently guessing a locale.
+
+Unambiguous mixed forms such as `1,234.50` / `1.234,50` / `1234.50` and repeated
+valid thousands groups normalize to exact keys. Signs are retained; no relative
+floating-point tolerance silently accepts a nearby value. Malformed tokens
+cannot match a supported numeric prefix. Line-leading list markers are a
+narrow syntax exemption. This is lexical presence checking, not arithmetic,
+unit conversion, locale inference or claim entailment.
+
+### Remaining limitations and scope
+
+- Existing-number false conclusions, invented proper names, unsupported prose,
+  single-significant-digit values and ungated titles remain possible. Matching
+  a value/quotation does not establish attribution or semantic support.
+- Numeric ambiguity can quarantine correct reformattings. Negations,
+  spelled-out values and unit conversions can also produce heuristic false
+  positives. Ambiguous single-quote/plural-apostrophe punctuation can cause both
+  false positives and false negatives: the lexer can end a quotation early and
+  leave an unsupported remainder as unchecked prose. For example, source
+  `The labs have measurements.` and output `The source says ‘The labs’ report
+  certifies all waters’ during inspection.` can match only `The labs`. This
+  residual is accepted explicitly; the lexer is not a grammar or semantic
+  verifier. The UI discloses both surviving unsupported claims and removed
+  supported wording.
+- The source sanitizer remains sentence-level EN/DE/FR heuristics. Obfuscation,
+  uncovered languages/phrasing and cross-turn propagation of accepted prose
+  remain possible. Legitimate security material describing an injection can
+  lose a matched sentence. No universal injection resistance is claimed.
+- Unsafe persisted drafts are rejected, not rewritten against old audio.
+  Historical ready artifacts are not retrospectively certified or modified.
+  Rejected paused drafts/segments remain available until explicitly replaced
+  or deleted; their existing transcript is historical output.
+- PDF provenance is partial: unknown paint data, character-alignment fallback,
+  backgrounds, clipping effects, overlays and blend modes prevent complete
+  rendering-visibility inference. Above the decoration budget, individual
+  markers are omitted explicitly while all extracted/cited text remains.
+- The worker watchdog is an inactivity deadline, not a total CPU-time budget.
+  Historical intermittent Firefox IndexedDB failures remain unexplained;
+  baseline occurrence alone does not prove an environmental cause. The new
+  quota retry's escaping-error branch is not proven by a swallowed Cache.put
+  failure in the dependency. No unrelated watchdog/cache redesign was added.
+- No semantic judge, answer-generation schema change, extraction-only mode,
+  new dependency, release tag, remote publication or deployment is included.
+  The nine known private semantic-negative cases are not weakened or deleted.
+
+### Verification and independent review
+
+Final verification on the reviewed remediation tree:
+
+| Gate | Observed result |
+|---|---|
+| Pinned self-hosted assets | 27/27 verified (220 MiB) |
+| `pnpm verify` | 419/419 unit tests; 10/10 Rust tests; typecheck 0 errors/0 warnings; production build passed |
+| `pnpm test:security` (corrected full rerun) | 44/44 passed, 22 per browser, no skips (3.1 minutes) |
+| `pnpm test:e2e` | 84/84 passed, 42 per browser, no skips (9.6 minutes); all five previously skipped Firefox workflow bodies executed |
+| Original synthetic sanitizer canaries | All five exact repository payloads (direct, indirect, DE, FR, history) pass in the unit suite |
+| Final live Mistral generation replay | Seven selected canary requests completed; zero targeted fabricated literals survived; two Study Guide sections quarantined |
+| Final live OpenRouter comparison | Two requests attempted; both blocked by `http_429`. Not counted as passes; privacy/routing requirements were not relaxed |
+| Independent Sol review | R1–R9 code follow-up READY after correcting the additional quoted-word/outside-possessive case; independently reran 147 focused tests, 10 Rust tests, actual-WASM 13-page provenance and native audio checks |
+
+The real-provider replay covered indirect injection, valid-ID forgery, FAQ,
+Study Guide, two-turn history, and podcast-script generation. It used existing
+adapters and synthetic sources, with a hard nine-request cap per run and no
+automatic retries. There were two runs around the quotation follow-up: 18 total
+attempts, 14 completed Mistral generations and four OpenRouter 429 responses.
+The final completed requests took about 1.5–8.7 seconds each. This is a literal
+canary evaluation, **not** semantic verification, an exact replay of the entire
+original campaign, or a live speech-quality/TTS certification. No real TTS was
+requested; both adapters' pre-speech boundaries are exercised by actual-browser
+mocked-provider tests and real decode/encoding workers.
+
+Measured viewer results from the final full E2E run (20ms heartbeat; host-specific):
+
+| Browser | Valid hidden spans | Maximum main-thread gap | Click-to-verified-render elapsed |
+|---|---:|---:|---:|
+| Chromium | 5,000 | 28.2ms | 413.5ms |
+| Chromium | 50,000 | 32.4ms | 424.7ms |
+| Firefox | 5,000 | 31ms | 1085.3ms |
+| Firefox | 50,000 | 38ms | 646.6ms |
+
+The unchanged-candidate 50,000-span baseline remeasurement stalled for
+6,220ms / 28,104ms respectively. The benchmark uses a valid ~1.2MiB PDF with
+100,099 characters parsed by real Rust/WASM and pinned Pdfium, then seeds those
+actual pages into a disposable local origin to isolate viewer cost from
+embedding. Complete canonical text and citation highlighting are asserted;
+per-span decoration is explicitly omitted above the documented budget.
+
+Earlier failures are retained rather than relabelled as successes:
+
+- The independent follow-up found a genuine supported quote followed by an
+  outside plural possessive being removed. Five new controls failed before
+  the narrow correction; all controls then passed, including prior negatives.
+- The first full security run was 42 passed / 2 failed. The existing XSS fixture
+  expected `<script>alert(10)</script>` but received the correct numeric/quote
+  quarantine notice because 10/11 were absent from its source. The correction
+  adds explicit inert 10/11 source evidence while preserving the original
+  malicious response and every DOM/citation/reload/key-lifecycle assertion.
+  A direct gate toggle demonstrates the cause; focused 2/2 and full 44/44
+  reruns passed. No unsupported-value regression was weakened.
+- Initial new browser probes had test-only setup errors: repeated Pdfium
+  initialization (`RuntimeError: unreachable`) and a mismatched saved-segment
+  label. Their corrected lifetimes/assertions pass; no production workaround
+  or increased performance tolerance was introduced.
+
+Evidence is retained in the machine-private bundle
+`researchbench-remediation-round2-20261015` rather than committing raw provider
+traffic or credentials. Key artifacts: `verify-final.log`,
+`security-rerun-final.log`, `e2e-final.log`, `live-canaries.json`,
+`xss-fixture-toggle.json`, baseline reproduction logs, and the independent
+reviewer's focused/provenance/audio outputs. Native browser suites use synthetic
+documents and mocked providers; real-provider results are separated above.
+
+Commands (existing pinned Node/pnpm/Rust/Playwright toolchain):
+
+```sh
+node scripts/prepare-assets.mjs --verify
+node scripts/build-wasm.mjs
+pnpm verify
+pnpm test:security
+pnpm test:e2e
+```
+
+Only local signed commits on the remediation branch are authorized. No push,
+merge, tag or deployment is part of this round.
+
+---
+
+## Round 1 historical verification (HEAD `5ce5a47` through `a512125`)
+
+The following results and assessments record the first remediation round. They
+are **not** the current guarantees: the independent review rejected that round.
+In particular, the historical numerical-format, universal quarantine and Firefox
+environment explanations below were challenged by reproduced counterexamples.
+See the Round 2 section for the replacement policy and verification evidence.
 
 | Gate | Result |
 |---|---|

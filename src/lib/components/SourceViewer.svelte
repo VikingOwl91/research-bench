@@ -1,16 +1,16 @@
 <script lang="ts">
   import { displaySourceName } from '#lib/display-source-name.ts';
   import { t } from '#lib/i18n/store.ts';
+  import { buildSourceSegments } from '#lib/source-segments.ts';
   import { onMount, tick } from 'svelte';
   import { FileText, ChevronLeft, ChevronRight, X, ArrowUpRight } from 'lucide-svelte';
-  import type { Citation, HiddenSpan, Source } from '#lib/types.ts';
+  import type { Citation, Source } from '#lib/types.ts';
   export let source: Source;
   export let citation: Citation | undefined = undefined;
   export let onClose: () => void;
   let pageNumber = citation?.page ?? source.pages[0]?.page ?? 1;
   let marker: HTMLElement | undefined;
   let heading: HTMLElement;
-  interface Segment { text: string; hidden: boolean; cited: boolean }
   // The parent remounts this viewer for every explicit selection, including re-clicks.
   // Citation IDs are request-local and cannot identify a navigation event.
   onMount(() => { void focusMark(); });
@@ -19,30 +19,7 @@
   $: hasHiddenText = !!page?.hiddenSpans?.length;
   $: textlessPages = source.kind === 'pdf' ? source.pages.filter((item) => !item.text.trim()).length : 0;
   // Split the page text into segments marked by hidden spans and the cited span.
-  $: segments = buildSegments(page?.text ?? '', page?.hiddenSpans ?? [], validSpan && citation ? citation : undefined);
-  function buildSegments(text: string, hiddenSpans: HiddenSpan[], cited?: Citation): Segment[] {
-    const boundaries = new Set<number>([0, text.length]);
-    for (const span of hiddenSpans) {
-      if (span.start >= 0 && span.end > span.start && span.end <= text.length) {
-        boundaries.add(span.start);
-        boundaries.add(span.end);
-      }
-    }
-    if (cited && cited.end <= text.length) {
-      boundaries.add(cited.start);
-      boundaries.add(cited.end);
-    }
-    const points = [...boundaries].sort((a, b) => a - b);
-    const segments: Segment[] = [];
-    for (let index = 0; index < points.length - 1; index++) {
-      const start = points[index], end = points[index + 1];
-      if (end <= start) continue;
-      const hidden = hiddenSpans.some((span) => span.start < end && start < span.end);
-      const citedSpan = cited && cited.start < end && start < cited.end;
-      segments.push({ text: text.slice(start, end), hidden, cited: !!citedSpan });
-    }
-    return segments;
-  }
+  $: segmentation = buildSourceSegments(page?.text ?? '', page?.hiddenSpans ?? [], validSpan && citation ? citation : undefined);
   async function focusMark() {
     await tick();
     marker?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
@@ -62,8 +39,11 @@
   {#if citation}
     <div class="source-notice"><ArrowUpRight size={15}/><span>{$t(validSpan ? 'components.viewer.highlight' : 'components.viewer.noHighlight')}</span></div>
   {/if}
-  {#if hasHiddenText}
+  {#if hasHiddenText && !segmentation.markersLimited}
     <div class="source-notice hidden-text-legend"><span class="hidden-text-sample" aria-hidden="true">abc</span><span>{$t('components.viewer.hiddenText')}</span></div>
+  {/if}
+  {#if segmentation.markersLimited}
+    <div class="source-notice provenance-limit-notice"><span>{$t('components.viewer.markersLimited')}</span></div>
   {/if}
   {#if textlessPages > 0}
     <div class="source-notice"><span>{$t('components.viewer.textlessPages', { count: textlessPages, total: source.pages.length })}</span></div>
@@ -73,7 +53,7 @@
     <article class="source-paper">
       <div class="paper-heading"><span><bdi>{displaySourceName(source.name)}</bdi></span><span>{String(pageNumber).padStart(2, '0')}</span></div>
       {#if page}
-        <div class="page-text">{#each segments as segment}{#if segment.cited}<mark bind:this={marker} tabindex="-1" class:pdf-hidden-text={segment.hidden}>{segment.text}</mark>{:else if segment.hidden}<span class="pdf-hidden-text">{segment.text}</span>{:else}{segment.text}{/if}{/each}</div>
+        <div class="page-text">{#each segmentation.segments as segment}{#if segment.cited}<mark bind:this={marker} tabindex="-1" class:pdf-hidden-text={segment.hidden}>{segment.text}</mark>{:else if segment.hidden}<span class="pdf-hidden-text">{segment.text}</span>{:else}{segment.text}{/if}{/each}</div>
       {:else}<p class="muted">{$t('components.viewer.unavailable')}</p>{/if}
     </article>
   </div>

@@ -2,6 +2,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { provenancePdf, paintModePages } from './pdf-provenance.mjs';
 const root=dirname(fileURLToPath(import.meta.url));
 const documents = [
  {file:'01-solarprojekt.pdf',pages:[['Solarprojekt Lindenhof','Originales Testdokument, keine echten Personendaten.','Das Projekt Lindenhof nutzt Solarmodule auf dem Schuldach.','Die Anlage produziert 42000 Kilowattstunden Strom pro Jahr.','Der Batteriespeicher hat eine Kapazitaet von 18 Kilowattstunden.'],['Zeitplan und Finanzierung','Der geplante Betriebsbeginn ist der 15. Mai 2027.','Die Gemeinde investiert 68000 Euro in das Projekt.','Technische Ansprechpartnerin ist die fiktive Ingenieurin Mara Fink.']],question:'Wie viel Strom produziert das Solarprojekt pro Jahr?',expected:'42000',page:1},
@@ -44,6 +45,7 @@ function mixedPagesPdf(){return pdf([['Fiktives Mischdokument mit Text auf Seite
 for(const d of documents)writeFileSync(join(root,d.file),pdf(d.pages));
 writeFileSync(join(root,'04-hidden-text.pdf'),hiddenTextPdf());
 writeFileSync(join(root,'05-mixed-pages.pdf'),mixedPagesPdf());
+writeFileSync(join(root,'06-paint-modes.pdf'),provenancePdf(paintModePages));
 writeFileSync(join(root,'textless.pdf'),pdf([[]]));
 writeFileSync(join(root,'corrupt.pdf'),'%PDF-1.4\nThis is intentionally corrupt; no xref or objects.');
 writeFileSync(join(root,'unicode.txt'),'Originales CC0-Testdokument.\nGrüße aus Köln: Bäume speichern Kohlenstoff. 🌳\nDer fiktive Stadtwald speichert 730 Tonnen Kohlenstoff.\n');

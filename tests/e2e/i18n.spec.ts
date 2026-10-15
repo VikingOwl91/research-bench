@@ -59,13 +59,14 @@ test('source-reference limits remain visible in EN/DE chat and every Studio tab 
     for (const language of ['en', 'de'] as const) {
       await page.locator('#interface-language').selectOption(language);
       const english = language === 'en';
-      const limitation = english ? 'factual support is not automatically verified' : 'die inhaltliche Belegbarkeit wird nicht automatisch geprüft';
-      const unsupported = english ? 'unsupported claims' : 'unbelegte Aussagen';
+      const limitation = english ? 'it does not verify factual support' : 'sie prüft keine inhaltliche Belegbarkeit';
+      const unsupported = english ? 'Unsupported claims' : 'Unbelegte Aussagen';
       if (width === 390) await page.locator('.mobile-navigation').getByRole('button', { name: english ? 'Research' : 'Recherche', exact: true }).click();
       await expect(page.locator('.local-pill')).toHaveText(english ? 'Source references' : 'Quellenverweise');
       await expect(page.locator('.composer-footnote')).toBeVisible();
       await expect(page.locator('.composer-footnote')).toContainText(limitation);
       await expect(page.locator('.composer-footnote')).toContainText(unsupported);
+      await expect(page.locator('.composer-footnote')).toContainText(english ? 'supported wording can be removed' : 'belegte Formulierungen entfernt werden');
       if (width === 390) await page.locator('.mobile-navigation').getByRole('button', { name: 'Studio', exact: true }).click();
       for (const tab of [english ? 'Overview' : 'Überblick', 'FAQ', english ? 'Learn' : 'Lernen', 'Podcast']) {
         await page.locator('.generator-tabs').getByRole('button', { name: tab, exact: true }).click();

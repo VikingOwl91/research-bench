@@ -553,6 +553,10 @@ export const runtimeMessages = {
     "en": "Invalid podcast draft.",
     "de": "Ungültiger Podcast-Entwurf."
   },
+  "runtime.podcastResumeUnsupported": {
+    "en": "This saved draft does not pass the current source-reference checks. Create a new podcast; the existing draft and audio segments have been preserved.",
+    "de": "Dieser gespeicherte Entwurf besteht die aktuellen Quellenverweis-Prüfungen nicht. Erstelle einen neuen Podcast; der vorhandene Entwurf und seine Audioabschnitte bleiben erhalten."
+  },
   "runtime.storageInvalidSegment": {
     "en": "Invalid or already saved audio segment.",
     "de": "Ungültiges oder bereits gespeichertes Audiosegment."
@@ -626,12 +630,12 @@ export const runtimeMessages = {
   "runtime.rustPdfUnavailable": { en: "Pdfium is unavailable.", de: "Pdfium ist nicht verfügbar." },
   "runtime.rustPdfDamaged": { en: "The PDF is damaged or unreadable.", de: "Die PDF ist beschädigt oder kann nicht gelesen werden." },
   "runtime.unsupportedSectionRemoved": {
-    "en": "This section was removed because its claims could not be matched to the cited source passages.",
-    "de": "Dieser Abschnitt wurde entfernt, weil seine Aussagen nicht in den zitierten Quellpassagen gefunden wurden."
+    "en": "This section was removed because a numeric literal or quotation could not be matched to the source passages. This heuristic does not verify meaning.",
+    "de": "Dieser Abschnitt wurde entfernt, weil eine Zahl oder ein Zitat nicht den Quellpassagen zugeordnet werden konnte. Diese Heuristik prüft keine Bedeutung."
   },
   "runtime.unsupportedTurnRemoved": {
-    "en": "This contribution was removed because its claims could not be matched to the cited source passages.",
-    "de": "Dieser Beitrag wurde entfernt, weil seine Aussagen nicht in den zitierten Quellpassagen gefunden wurden."
+    "en": "This contribution was removed because a numeric literal or quotation could not be matched to the source passages. This heuristic does not verify meaning.",
+    "de": "Dieser Beitrag wurde entfernt, weil eine Zahl oder ein Zitat nicht den Quellpassagen zugeordnet werden konnte. Diese Heuristik prüft keine Bedeutung."
   },
   "runtime.staleAbort": {
     "en": "Aborted: the sources or settings changed while this was running. Please try again.",

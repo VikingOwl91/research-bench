@@ -1,22 +1,30 @@
-import { test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
-/**
- * CI provisions an isolated audio null sink (pulseaudio) for native playback
- * tests. Environments without a running audio backend cannot advance media
- * playback (AudioContext stays suspended), so tests that assert playback
- * progress skip there with a documented reason instead of failing on
- * environment capability. In CI the backend is present and they run.
- */
-export async function requireAudioBackend(page: Page): Promise<void> {
-  const state = await page.evaluate(async () => {
+/** Check initialized, advancing audio rather than Firefox's initial suspended state. */
+export async function probeAudioBackend(page: Page, timeoutMs = 5_000): Promise<{ running: boolean; advanced: boolean }> {
+  return page.evaluate(async timeout => {
+    let context: AudioContext | undefined;
     try {
-      const context = new AudioContext();
-      const state = context.state;
-      await context.close();
-      return state;
+      context = new AudioContext();
+      const start = context.currentTime;
+      // Resume may remain pending without an audio device or autoplay permission.
+      // Poll within the deadline rather than awaiting that promise indefinitely.
+      void context.resume().catch(() => {});
+      const deadline = performance.now() + timeout;
+      while (performance.now() < deadline) {
+        if (context.state === 'running' && context.currentTime > start + 0.02) return { running: true, advanced: true };
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+      return { running: context.state === 'running', advanced: context.currentTime > start + 0.02 };
     } catch {
-      return 'unavailable';
+      return { running: false, advanced: false };
+    } finally {
+      if (context) await context.close().catch(() => {});
     }
-  });
-  test.skip(state !== 'running', `No running audio backend (AudioContext state: ${state}); CI provides a pulseaudio null sink for native playback tests.`);
+  }, timeoutMs);
+}
+
+/** Playback is required coverage. Missing output is an actionable failure, never a silent skip. */
+export async function requireAudioBackend(page: Page): Promise<void> {
+  expect(await probeAudioBackend(page), 'Native playback requires an initialized audio output with an advancing clock; CI supplies a PulseAudio null sink.').toEqual({ running: true, advanced: true });
 }

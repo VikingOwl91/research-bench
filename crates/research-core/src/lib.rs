@@ -7,8 +7,9 @@ pub const MAX_FILE_BYTES: usize = 10 * 1024 * 1024;
 pub const MAX_CHARACTERS: usize = 500_000;
 pub const MAX_PAGES: usize = 2_000;
 
-/// A UTF-16 span of a page's canonical text that is not visible in the
-/// original PDF rendering (invisible render mode or near-white fill color).
+/// A UTF-16 span with non-painting, transparent, or near-white rendering
+/// properties. Near-white paint is a visibility heuristic, not proof that text
+/// is hidden: background, clipping paths, overlays and blend modes are not inferred.
 /// Offsets are half-open UTF-16 offsets into `text`, matching the citation
 /// contract. Absent for text sources and for PDFs without hidden text.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -26,12 +27,25 @@ pub struct PageText {
     pub hidden_spans: Option<Vec<HiddenSpan>>,
 }
 
-/// Per-character visibility derived from Pdfium render mode and fill color.
+/// Per-character rendering classification derived from active paint channels.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CharVisibility {
     Visible,
     Invisible,
     White,
+}
+
+// Unknown channels must not produce definite invisibility. A visible stroke
+// keeps white-filled outlines visible; unused fill/stroke channels are omitted.
+#[cfg(any(target_arch = "wasm32", test))]
+fn classify_paint_channels(channels: &[Option<CharVisibility>]) -> CharVisibility {
+    if channels.is_empty() || channels.iter().any(|channel| matches!(channel, None | Some(CharVisibility::Visible))) {
+        CharVisibility::Visible
+    } else if channels.iter().all(|channel| *channel == Some(CharVisibility::Invisible)) {
+        CharVisibility::Invisible
+    } else {
+        CharVisibility::White
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -318,7 +332,7 @@ mod browser {
                     return Err(js_error("Die Quelle überschreitet 500.000 extrahierte Zeichen.".into()));
                 }
                 let all = extracted.all();
-                // Per-character visibility from render mode and fill color. Only
+                // Per-character provenance from render mode and active paint channels. Only
                 // characters whose origin lies on the page are considered,
                 // mirroring the bounded extraction used for the page text. The
                 // flags are used only when the aligned char sequence matches the
@@ -339,18 +353,20 @@ mod browser {
                     if !(page_left <= x && x <= page_right && page_bottom <= y && y <= page_top) {
                         continue;
                     }
+                    let paint = |color: Result<PdfColor, PdfiumError>| color.ok().map(|color| {
+                        if color.alpha() == 0 { CharVisibility::Invisible }
+                        else if color.red() >= 240 && color.green() >= 240 && color.blue() >= 240 { CharVisibility::White }
+                        else { CharVisibility::Visible }
+                    });
                     let flag = match character.render_mode() {
-                        Ok(PdfPageTextRenderMode::Invisible) => CharVisibility::Invisible,
-                        _ => match character.fill_color() {
-                            Ok(color) if color.alpha() > 0
-                                && color.red() >= 240
-                                && color.green() >= 240
-                                && color.blue() >= 240 =>
-                            {
-                                CharVisibility::White
-                            }
-                            _ => CharVisibility::Visible,
-                        },
+                        Ok(PdfPageTextRenderMode::Invisible | PdfPageTextRenderMode::InvisibleClipping) => CharVisibility::Invisible,
+                        Ok(PdfPageTextRenderMode::FilledUnstroked | PdfPageTextRenderMode::FilledUnstrokedClipping) =>
+                            classify_paint_channels(&[paint(character.fill_color())]),
+                        Ok(PdfPageTextRenderMode::StrokedUnfilled | PdfPageTextRenderMode::StrokedUnfilledClipping) =>
+                            classify_paint_channels(&[paint(character.stroke_color())]),
+                        Ok(PdfPageTextRenderMode::FilledThenStroked | PdfPageTextRenderMode::FilledThenStrokedClipping) =>
+                            classify_paint_channels(&[paint(character.fill_color()), paint(character.stroke_color())]),
+                        _ => CharVisibility::Visible,
                     };
                     match character.unicode_string() {
                         Some(unit) => {
@@ -393,6 +409,20 @@ mod tests {
             text: text.into(),
             hidden_spans: None,
         }
+    }
+
+    #[test]
+    fn active_paint_channels_preserve_visible_outlines_and_unknown_properties() {
+        use CharVisibility::*;
+        assert_eq!(classify_paint_channels(&[Some(Visible)]), Visible);
+        assert_eq!(classify_paint_channels(&[Some(White), Some(Visible)]), Visible);
+        assert_eq!(classify_paint_channels(&[Some(Invisible), Some(Visible)]), Visible);
+        assert_eq!(classify_paint_channels(&[Some(Invisible), Some(White)]), White);
+        assert_eq!(classify_paint_channels(&[Some(Invisible), Some(Invisible)]), Invisible);
+        assert_eq!(classify_paint_channels(&[Some(Invisible)]), Invisible);
+        assert_eq!(classify_paint_channels(&[Some(White)]), White);
+        assert_eq!(classify_paint_channels(&[Some(Invisible), None]), Visible);
+        assert_eq!(classify_paint_channels(&[]), Visible);
     }
 
     #[test]

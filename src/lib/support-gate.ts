@@ -10,19 +10,17 @@
  *    previous instructions", "you must say …", "print the API key", …) are
  *    replaced with a marker instead of being transmitted.
  *
- * 2. `applySupportGate` / `applyPodcastSupportGate` check every cited answer
- *    block (and every cited podcast turn) against the exact sanitized excerpt
- *    text the model saw. A block whose checkable specifics — quoted spans,
- *    numbers, or multi-token proper-noun phrases — cannot be found in its
- *    cited excerpts is quarantined: the claim text is replaced by a
- *    deterministic removal notice and its citations are dropped, so
- *    unsupported claims are never persisted or synthesized as sourced facts.
+ * 2. `applySupportGate` / `applyPodcastSupportGate` compare selected numeric
+ *    literals and literal quotations in each block/turn with its sanitized
+ *    excerpts (all excerpts for uncited text). Unmatched specifics trigger a
+ *    deterministic replacement notice. This is a lexical heuristic, not claim
+ *    entailment: matching numbers/quotes do not establish the factual meaning,
+ *    and prose, proper nouns, single-digit values and titles remain unchecked.
  *
- * Both layers are deterministic, run locally, add no model calls, and do not
- * change the source documents, the stored pages, or the retrieval index.
- * Residual limitation (documented in docs/security): prose without any
- * checkable specific can still be elaborated beyond the excerpts; presence of
- * a specific in an excerpt is necessary, not sufficient, evidence of support.
+ * Both layers run locally, add no model calls, and leave source documents and
+ * the retrieval index unchanged. The gates return replacement values; callers
+ * must apply them before display, persistence or speech synthesis. Sanitization
+ * can also remove benign reported instructions; see docs/security limitations.
  */
 import type { Citation, GroundedAnswer, PodcastScript } from './types';
 
@@ -33,7 +31,7 @@ export const INSTRUCTION_MARKER = '[instruction-like content removed]';
  * Sentence patterns that direct an assistant, in the app's UI languages
  * (English, German) plus French (tested by the audit). Matching is
  * case-insensitive; each pattern must be directed at an assistant or be an
- * unambiguous injection marker, so ordinary prose is preserved.
+ * injection marker. Benign prose quoting these instructions can also match.
  */
 const INSTRUCTION_PATTERNS: readonly RegExp[] = [
   /\bsystem[\s-]*override\b/i,
@@ -99,84 +97,179 @@ export function sanitizeForModel(text: string): string {
   return changed ? sanitized.join(' ') : text;
 }
 
-interface Specific { kind: 'quote' | 'number'; value: string; number?: number }
+interface Specific { kind: 'quote' | 'number'; value: string; number?: string }
 
 function normalizeText(text: string): string {
-  return text.normalize('NFKC').replace(/\s+/g, ' ').trim();
+  return text.normalize('NFKC').replace(/\u2212/g, '-').replace(/\s+/g, ' ').trim();
 }
 
 /**
- * Normalize a number literal for comparison: thousand-grouped forms
- * ("1,234" / "1.234") become integers, decimal forms ("18,4" / "18.4") unify
- * to a dot, everything else is rejected. Both claim and excerpt numbers use
- * the same rule, so formatting never decides support.
+ * Exact lexical number keys; never use floating-point tolerance or infer a
+ * locale. A lone separator followed by three digits is ambiguous (1.234 could
+ * be a decimal or grouped integer), so it matches only the same literal.
+ * This deliberately rejects equivalent-looking but ambiguous reformattings.
+ * Mixed grouping/decimal forms and repeated thousands groups are unambiguous.
  */
-function parseNumber(raw: string): number | null {
-  const thousandGrouped = /^[1-9]\d{0,2}(?:[.,]\d{3})+$/.test(raw);
-  const normalized = thousandGrouped ? raw.replace(/[.,]/g, '') : raw.replace(',', '.');
-  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
-  const value = Number(normalized);
-  return Number.isFinite(value) ? value : null;
+function parseNumber(raw: string): string | null {
+  const sign = raw.startsWith('-') ? '-' : '';
+  const unsigned = raw.replace(/^[+-]/, '').replace(/^([.,])(?=\d)/, '0$1');
+  if (!/^\d+(?:[.,]\d+)*$/.test(unsigned)) return null;
+  if (/^\d+[.,]\d{3}$/.test(unsigned)) return `literal:${raw}`;
+  let decimal = unsigned;
+  if (unsigned.includes('.') && unsigned.includes(',')) {
+    const decimalMark = unsigned.lastIndexOf('.') > unsigned.lastIndexOf(',') ? '.' : ',';
+    const grouping = decimalMark === '.' ? ',' : '.';
+    const [integer, fraction, ...extra] = unsigned.split(decimalMark);
+    const grouped = new RegExp(`^\\d{1,3}(?:\\${grouping}\\d{3})+$`);
+    if (extra.length || !fraction || !/^\d+$/.test(fraction) || !grouped.test(integer)) return null;
+    decimal = `${integer.split(grouping).join('')}.${fraction}`;
+  } else if (/^\d{1,3}(?:([.,])\d{3}){2,}$/.test(unsigned)) {
+    // A single grouping convention is required: 1,234.567 is not grouped integer.
+    const grouping = unsigned.includes(',') ? ',' : '.';
+    if (unsigned.includes(grouping === ',' ? '.' : ',')) return null;
+    decimal = unsigned.split(grouping).join('');
+  } else if (/^\d+(?:[.,]\d+)?$/.test(unsigned)) {
+    decimal = unsigned.replace(',', '.');
+  } else return null;
+  const [integer, fraction = ''] = decimal.split('.');
+  const whole = integer.replace(/^0+(?=\d)/, '');
+  const fractional = fraction.replace(/0+$/, '');
+  const value = `${whole}${fractional ? `.${fractional}` : ''}`;
+  return `value:${value === '0' ? '' : sign}${value}`;
 }
 
-function significantDigits(raw: string): number {
-  const digits = raw.replace(/[^\d]/g, '').replace(/^0+/, '');
-  return digits.length;
-}
+const WORD = /[\p{L}\p{N}\p{M}_]/u;
+const QUOTE_ENDS: Record<string, readonly string[]> = {
+  '"': ['"', '”'], '“': ['”'], '„': ['“', '”'], '«': ['»'], '‹': ['›'],
+  "'": ["'"], '‘': ['’'], '‚': ['‘', '’']
+};
+const SINGLE_QUOTES = new Set(["'", '‘', '’', '‚']);
 
-/**
- * Extract checkable specifics from generated text: quoted spans and numbers
- * with at least two significant digits. A preceding word character, "(" or "."
- * excludes identifiers, citation IDs and function-call payloads; single-digit
- * numbers are too weak to enforce. Multi-token proper-noun phrases are
- * deliberately NOT checked: German capitalizes every noun, so the heuristic
- * produced unacceptable false positives (documented residual: fabricated
- * names are not caught by the deterministic gate).
- */
-export function extractSpecifics(text: string): Specific[] {
-  const specifics: Specific[] = [];
-  const cleaned = text.replace(/<[^>]*>/g, ' ').replace(/https?:\/\/\S+/gi, ' ');
-  const quotePattern = /["“„«‹][^"“„«‹”»›]{2,}["”»›]|['‘’][^'‘’]{2,}[’]/g;
-  for (const match of cleaned.matchAll(quotePattern)) {
-    const value = normalizeText(match[0].slice(1, -1));
-    if (value) specifics.push({ kind: 'quote', value });
+function extractQuotes(text: string): Specific[] {
+  const quotes: Specific[] = [];
+  const closingPositions = new Map<string, number[]>();
+  const cursors = new Map<string, number>();
+  const openingPositions = new Map<string, number[]>();
+  const wordBefore = (index: number) => /[\p{L}\p{N}\p{M}_]$/u.test(text.slice(Math.max(0, index - 2), index));
+  const wordAfter = (index: number) => WORD.test(String.fromCodePoint(text.codePointAt(index + 1) ?? 0));
+  const closers = new Set(Object.values(QUOTE_ENDS).flat());
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (QUOTE_ENDS[char] && (!SINGLE_QUOTES.has(char) || !wordBefore(index))) {
+      const positions = openingPositions.get(char) ?? [];
+      positions.push(index);
+      openingPositions.set(char, positions);
+    }
+    if (!closers.has(char)) continue;
+    if (SINGLE_QUOTES.has(char) && wordAfter(index)) continue;
+    const positions = closingPositions.get(char) ?? [];
+    positions.push(index);
+    closingPositions.set(char, positions);
   }
-  const numberPattern = /(?<![\w(.@#])\d+(?:[.,]\d+)*/g;
-  for (const match of cleaned.matchAll(numberPattern)) {
-    const value = parseNumber(match[0]);
-    if (value === null || significantDigits(match[0]) < 2) continue;
-    specifics.push({ kind: 'number', value: match[0], number: value });
+  const hasOpeningBetween = (opener: string, after: number, before: number) => {
+    const positions = openingPositions.get(opener) ?? [];
+    let low = 0, high = positions.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (positions[middle] <= after) low = middle + 1;
+      else high = middle;
+    }
+    return low < positions.length && positions[low] < before;
+  };
+  const possiblePluralPossessives = new Map<number, boolean>();
+  const isPossiblePluralPossessive = (index: number) => {
+    let possible = possiblePluralPossessives.get(index);
+    if (possible === undefined) {
+      let next = index + 1;
+      while (next < text.length && /\s/u.test(text[next])) next++;
+      possible = /s/i.test(text[index - 1] ?? '') && next > index + 1
+        && WORD.test(String.fromCodePoint(text.codePointAt(next) ?? 0));
+      possiblePluralPossessives.set(index, possible);
+    }
+    return possible;
+  };
+  for (let start = 0; start < text.length; start++) {
+    const ends = QUOTE_ENDS[text[start]];
+    // Internal and trailing word apostrophes (lab's, lab’s, cats’) do not
+    // start quotations. Inside quotations, contractions do not end them.
+    if (!ends || (SINGLE_QUOTES.has(text[start]) && wordBefore(start))) continue;
+    let end = Infinity;
+    for (const closer of ends) {
+      const positions = closingPositions.get(closer) ?? [];
+      let cursor = cursors.get(closer) ?? 0;
+      while (cursor < positions.length && positions[cursor] <= start) cursor++;
+      // Skip a possible inner plural possessive only when a defensible
+      // terminal closer exists before a fresh opener. Another "labs’ report"
+      // alone is not evidence that an earlier "risks’" was inside the quote.
+      // Intrinsically ambiguous punctuation still follows this lexical policy.
+      if (cursor < positions.length && SINGLE_QUOTES.has(closer) && isPossiblePluralPossessive(positions[cursor])) {
+        for (let later = cursor + 1; later < positions.length; later++) {
+          if (hasOpeningBetween(text[start], positions[cursor], positions[later])) break;
+          if (!isPossiblePluralPossessive(positions[later])) {
+            cursor = later;
+            break;
+          }
+        }
+      }
+      cursors.set(closer, cursor);
+      if (cursor < positions.length) end = Math.min(end, positions[cursor]);
+    }
+    if (!Number.isFinite(end)) continue;
+    const value = normalizeText(text.slice(start + 1, end));
+    if (value) quotes.push({ kind: 'quote', value });
+    start = end;
+  }
+  return quotes;
+}
+
+/** Whole numeric tokens, including signs and malformed separators, are read
+ * together so a malformed value cannot match a supported numeric prefix.
+ * Visible HTML/code-like text is plain text in the UI and is checked too.
+ */
+function extractNumbers(text: string): Specific[] {
+  const specifics: Specific[] = [];
+  const listMarkers = new Set<number>();
+  for (const marker of text.matchAll(/^[^\S\r\n]*(\d+)[.)][^\S\r\n]/gm)) {
+    listMarkers.add(marker.index + marker[0].indexOf(marker[1]));
+  }
+  const numberPattern = /(?<![\p{L}\p{N}_@#.,+-])[+-]*(?:\d[\d.,+-]*|[.,]+\d[\d.,+-]*)(?:[eE][+-]?\d+)?/gu;
+  for (const match of text.matchAll(numberPattern)) {
+    let raw = match[0];
+    // A sentence's final period/comma is punctuation, not part of the number.
+    if (/[.,]$/.test(raw) && !/[.,]{2}$/.test(raw)) raw = raw.slice(0, -1);
+    // Only a line-leading list marker is exempt, not parenthesized quantities.
+    if (listMarkers.has(match.index)) continue;
+    specifics.push({ kind: 'number', value: raw, number: parseNumber(raw) ?? `invalid:${raw}` });
   }
   return specifics;
 }
 
-function extractNumbers(text: string): number[] {
-  const numbers: number[] = [];
-  for (const match of text.matchAll(/(?<![\w(.@#])\d+(?:[.,]\d+)*/g)) {
-    const value = parseNumber(match[0]);
-    if (value !== null) numbers.push(value);
-  }
-  return numbers;
+/** Significant numeric values and paired literal quotations; no semantic
+ * equivalence, proper-name validation, unit conversion or negation analysis.
+ */
+export function extractSpecifics(text: string): Specific[] {
+  const normalized = text.normalize('NFKC').replace(/\u2212/g, '-');
+  return [
+    ...extractQuotes(normalized),
+    ...extractNumbers(normalized).filter(specific => specific.value.replace(/[^\d]/g, '').replace(/^0+/, '').length >= 2)
+  ];
 }
 
-function excerptPool(citations: readonly Citation[], ids: readonly string[]): { pool: string; numbers: number[] } | null {
+function excerptPool(citations: readonly Citation[], ids: readonly string[]): { pool: string; numbers: ReadonlySet<string> } | null {
   const wanted = new Set(ids);
   const texts = citations.filter(citation => wanted.has(citation.id)).map(citation => normalizeText(sanitizeForModel(citation.text)));
   if (!texts.length) return null;
   const pool = texts.join(' \n ');
-  return { pool, numbers: extractNumbers(pool) };
+  return { pool, numbers: new Set(extractNumbers(pool).map(specific => specific.number!)) };
 }
 
-/** True when every checkable specific in `text` is present in the excerpt pool. */
-export function isSupportedByExcerpts(text: string, pool: string, poolNumbers: readonly number[]): boolean {
-  const specifics = extractSpecifics(text);
-  if (!specifics.length) return true; // Unverifiable prose passes; see module docs.
-  return specifics.every(specific => {
-    if (specific.kind === 'number') {
-      return poolNumbers.some(number => Math.abs(number - specific.number!) <= 1e-6 * Math.max(1, Math.abs(number)));
-    }
-    return pool.includes(specific.value);
-  });
+/** Numeric/quote presence is necessary but does not establish claim support. */
+export function isSupportedByExcerpts(text: string, pool: string, poolNumbers?: ReadonlySet<string>): boolean {
+  const normalizedPool = normalizeText(pool);
+  const numbers = poolNumbers ?? new Set(extractNumbers(normalizedPool).map(specific => specific.number!));
+  return extractSpecifics(text).every(specific => specific.kind === 'number'
+    ? numbers.has(specific.number!)
+    : normalizedPool.includes(specific.value));
 }
 
 export interface SupportGateResult<T> { value: T; quarantined: number }
@@ -211,8 +304,8 @@ export function applySupportGate(answer: GroundedAnswer, citations: readonly Cit
 /**
  * Podcast equivalent: a turn whose cited excerpts cannot match its checkable
  * specifics is replaced by a deterministic removal notice (same speaker, no
- * citations), so the fabricated claim is never persisted in the transcript
- * nor sent to speech synthesis. Uncited turns are checked against the full
+ * citations), so callers can use the returned transcript before
+ * persistence and speech synthesis. Uncited turns are checked against the full
  * excerpt pool, like answer blocks.
  */
 export function applyPodcastSupportGate(script: PodcastScript, citations: readonly Citation[], notice: string): SupportGateResult<PodcastScript> {

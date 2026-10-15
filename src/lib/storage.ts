@@ -3,6 +3,7 @@ import { translate, type MessageDescriptor } from './i18n/index';
 import { runtimeErrorDescriptor } from './i18n/runtime-errors';
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction } from 'idb';
 import { EMBEDDING_VERSION, LIMITS } from './constants';
+import { applyPodcastSupportGate } from './support-gate';
 import type { Artifact, ChatMessage, Chunk, Notebook, Source, TextArtifact, PodcastArtifact, PodcastFence, PodcastAudioSegment, PodcastRenderedAudio, Provider } from './types';
 
 export const DB_NAME = 'researchbench-v1';
@@ -241,6 +242,22 @@ export class BenchStorage {
       const candidates = (await tx.objectStore('artifacts').index('notebook').getAll(episode.notebookId))
         .filter(a => a.kind === 'podcast' && a.script.language === episode.script.language && a.status !== 'ready');
       if (!notebook || notebook.revision !== episode.revision || candidates.length !== 1 || candidates[0].id !== episode.id) conflict(tx);
+      // Existing drafts may predate the current heuristic. Check the frozen
+      // evidence inside this fenced transaction, before changing status or
+      // exposing a resumed transcript to fresh TTS. Reject rather than rewrite:
+      // cached segments must continue to match their original script exactly.
+      const evidence = episode.citations;
+      const validEvidence = Array.isArray(evidence) && evidence.length > 0 && evidence.every(c =>
+        typeof c.id === 'string' && !!c.id && typeof c.text === 'string' && !!c.text.trim());
+      const ids = new Set(validEvidence ? evidence.map(c => c.id) : []);
+      const turns = episode.script?.turns;
+      const validTurns = Array.isArray(turns) && turns.length > 0 && turns.every(t =>
+        typeof t.text === 'string' && !!t.text.trim() && Array.isArray(t.citationIds) &&
+        new Set(t.citationIds).size === t.citationIds.length && t.citationIds.every(id => ids.has(id)));
+      if (!validEvidence || ids.size !== evidence.length || !validTurns ||
+        applyPodcastSupportGate(episode.script, evidence, '').quarantined > 0) {
+        conflict(tx, translate('de', 'runtime.podcastResumeUnsupported'));
+      }
       episode.status = 'rendering'; episode.renderId = renderId;
       await tx.objectStore('artifacts').put(episode); await tx.done;
       return { episode, fence: this.fence(episode, epoch) };

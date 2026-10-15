@@ -78,7 +78,7 @@ test('unsupported cited claims are quarantined in chat, Studio and persistence; 
     await expect(page.locator('.chat-message:not(.user-message)')).toHaveCount(1, { timeout: 120_000 });
     const chatText = await page.locator('.chat-message:not(.user-message) .grounded-answer').textContent();
     expect(chatText).not.toContain('99 mg/L');
-    expect(chatText).toContain('removed because its claims could not be matched');
+    expect(chatText).toContain('removed because a numeric literal or quotation');
     expect(chatText).toContain('17 mg/L');
     expect(await page.locator('.chat-message:not(.user-message) .citation')).toHaveCount(1); // only the supported block keeps its citation
     // Studio FAQ: same quarantine for generated artifacts.
@@ -87,13 +87,13 @@ test('unsupported cited claims are quarantined in chat, Studio and persistence; 
     await expect(page.locator('.studio-content .grounded-answer')).toBeVisible({ timeout: 120_000 });
     const faqText = await page.locator('.studio-content .grounded-answer').textContent();
     expect(faqText).not.toContain('99 mg/L');
-    expect(faqText).toContain('removed because its claims could not be matched');
+    expect(faqText).toContain('removed because a numeric literal or quotation');
     // Persistence: the quarantined version is what survives a reload.
     await page.reload();
     await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeEnabled();
     const reloadedChat = await page.locator('.chat-message:not(.user-message) .grounded-answer').textContent();
     expect(reloadedChat).not.toContain('99 mg/L');
-    expect(reloadedChat).toContain('removed because its claims could not be matched');
+    expect(reloadedChat).toContain('removed because a numeric literal or quotation');
     await page.getByRole('button', { name: 'FAQ', exact: true }).click();
     const reloadedFaq = await page.locator('.studio-content .grounded-answer').textContent();
     expect(reloadedFaq).not.toContain('99 mg/L');
@@ -142,11 +142,11 @@ test('unsupported podcast turns are quarantined before speech synthesis and pers
     // The fabricated claim never reaches speech synthesis …
     expect(speechInputs).toHaveLength(4);
     expect(speechInputs.every(input => !input.includes('99 milligrams'))).toBe(true);
-    expect(speechInputs.some(input => input.includes('removed because its claims could not be matched'))).toBe(true);
+    expect(speechInputs.some(input => input.includes('removed because a numeric literal or quotation'))).toBe(true);
     // … nor the persisted transcript.
     const transcript = await page.locator('.podcast-transcript').textContent();
     expect(transcript).not.toContain('99 milligrams');
-    expect(transcript).toContain('removed because its claims could not be matched');
+    expect(transcript).toContain('removed because a numeric literal or quotation');
     expect(transcript).toContain('17 mg/L');
   } finally { await hosting.close(); }
 });
