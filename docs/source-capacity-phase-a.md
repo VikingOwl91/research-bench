@@ -30,18 +30,21 @@ this phase does not introduce. Known excess files are not read or indexed.
 
 ## Regression coverage
 
-`tests/unit/import-capacity.test.ts` adds 29 focused cases: 0/1/49/50 reopening,
+`tests/unit/import-capacity.test.ts` contains 35 focused cases: 0/1/49/50 reopening,
 49→50 and rejected 51st source, batches crossing capacity, stale persisted counts,
 competing database connections, external deletion and refresh, delete/reimport,
 exact/exceeded existing limits, incompatible embeddings, invalid files, quota
-rollback, active/read-time/post-commit cancellation, stale reports and view fences.
+rollback, active/read-time/post-commit cancellation, stale reports, view fences,
+overlapping refreshes (including rename-triggered refreshes) and late errors.
 Indexing is mocked in these unit tests; real parsers/embeddings are covered below.
 
-`tests/e2e/source-capacity.spec.ts` adds three integration cases in each browser:
+`tests/e2e/source-capacity.spec.ts` contains four integration cases in each browser:
 real final-slot imports, excess/drop non-reading, batch feedback, deletion/reopen;
-two-tab final-slot contention and recovery after external deletion; EN/DE,
-light/dark, 320/375/430/768px, focus reachability, overflow and axe checks with 50
-source rows. An existing native quota test additionally checks import accounting.
+two-tab final-slot contention and recovery after external deletion; overlapping
+50→49→stale-50 refreshes and subsequent real import; EN/DE, light/dark,
+320/375/430/768px, focus reachability and overflow with 50 source rows. Axe checks
+cover 375px and 768px in both languages and themes. An existing native quota test
+additionally checks import accounting.
 Browser count/layout fixtures use valid seeded vectors; final-slot imports use the
 real worker. Screenshots are local evidence under `.cache/phase-a/`.
 
@@ -142,7 +145,6 @@ bytes system RAM; Chromium 156.0.8078.4 and Firefox 157.0, headless desktop view
 
 | Browser | Source count | Index UI-ready median | Chunks/s from index median | Warm search worker median | Warm search UI median | Reload median |
 |---|---:|---:|---:|---:|---:|---:|
-
 | Chromium | 10 | 9.637s | 5.19 | 26.00ms | 114.12ms | 126.75ms |
 | Chromium | 50 | 10.339s | 4.84 | 27.05ms | 118.25ms | 126.50ms |
 | Firefox | 10 | 11.206s | 4.46 | 29.25ms | 120.00ms | 184.33ms |
@@ -240,3 +242,129 @@ No unexpected regression remains from the executed gates. The reviewer should
 explicitly assess race-losing indexing, high-byte responsiveness and the stated
 measurement limits. Independent final review and remote CI have not run. Stop here
 for that review; Phase B cleanup and public-release preparation have not started.
+
+## Review remediation: overlapping refreshes (2026-10-15)
+
+The independent review of `bb88ade` was **CONDITIONAL**, with a confirmed stale
+refresh defect. The preceding verification table records the original candidate;
+this section records the follow-up, without replacing the original measurements.
+
+### Root cause and correction
+
+Two manual refreshes captured the same notebook, job and view identities. If an
+older 50-source read completed after a newer read of 49 sources, both passed the
+guards. The older result restored the stale count and revision and disabled
+imports despite a free slot. The defect was reproduced before changing production
+code: four focused unit cases failed, and the exact browser regression failed in
+both Chromium and Firefox with `Expected: "49 / 50"; Received: "50 / 50"`.
+
+`ResearchBenchController` now assigns refresh requests monotonically increasing
+identities. Private refresh publication checks that identity alongside its
+existing view and caller guards. Manual refresh uses the same identity for
+publication, error reporting and post-refresh cleanup. Other private refresh
+callers participate in the same fence, including notebook rename. Reads are not
+queued or globally serialized; no storage transaction or schema changed.
+Cancellation, notebook switching and busy-operation guards remain in place.
+
+Six additional unit cases cover the exact 50→49→stale-50 ordering, late success
+after a newer failure, late failure after a newer success, manual/rename overlap
+in both directions and cancellation in the same notebook. The existing switch,
+busy-import and normal-refresh coverage remains. The browser regression defers
+delivery of one native source-read success event after its result is captured,
+deletes through the second tab's UI, completes a newer refresh, then releases the
+old event. It checks the displayed count, enabled chooser, unchanged persisted
+state and a successful real import using the current revision. No production test
+hook or arbitrary sleep is introduced.
+
+The optional improvements are included: axe now scans the source panel at 375px
+as well as 768px, in EN/DE and light/dark; the blank line breaking the performance
+table was removed. No original test expectations were relaxed.
+
+### Pre-existing storage byte-limit gap
+
+**Confirmed internal validation omission; no application-reachable import bypass
+identified.** `BenchStorage.saveSource()` checks notebook revision, count,
+characters, chunks and vector integrity, but does not independently validate
+`source.size` or `source.original.size`. The omission also exists in baseline
+`a77310d`. An isolated fake-IndexedDB probe supplied an otherwise valid source and
+chunk directly to this API: a 10,485,761-byte Blob was persisted with revision 1,
+despite the 10,485,760-byte import limit.
+
+Reachability inspection (`rg -n 'saveSource\(|fileBytes' src`) found exactly one
+production `saveSource` call, in `ResearchBenchController.importFiles()`. That
+method rejects an actual oversized `File` before `arrayBuffer()` or indexing.
+Both native chooser and drag-and-drop converge through `upload()` into that
+method; no alternate source-restore/import entry point was found. The permanent
+byte-boundary test now uses a real 10 MiB + 1 byte File rather than overriding its
+reported size, and still requires zero reads and zero indexing calls. The exact
+10 MiB positive control remains unchanged. The pipeline worker also has no
+independent byte guard; it is downstream of the controller check.
+
+Classification: **low-severity defense-in-depth gap**, not a demonstrated user
+import exploit or new Phase A regression. Arbitrary same-origin JavaScript could
+already write IndexedDB directly; calling this internal API does not establish a
+new security boundary. Oversized direct writes could consume browser storage or
+memory. Recommend optional storage-boundary hardening before adding any alternate
+source-ingestion API. It is not a demonstrated v0.1.0 blocker in the shipped
+chooser/drop workflow. No byte-limit or storage implementation change is included
+in this remediation. Reassess if a new caller or user-controlled restore path is
+introduced.
+
+### Follow-up verification and handoff
+
+Local evidence directory: `.cache/phase-a-remediation/` (ignored, synthetic data
+only). Useful reproduction commands:
+
+```sh
+pnpm exec vitest run tests/unit/import-capacity.test.ts
+pnpm exec playwright test tests/e2e/source-capacity.spec.ts
+node scripts/prepare-assets.mjs --verify
+pnpm wasm:build
+pnpm verify
+pnpm test:e2e --output .cache/phase-a-remediation/e2e-results
+pnpm test:security --output .cache/phase-a-remediation/security-results
+```
+
+| Gate | Actual follow-up result | Local evidence |
+|---|---|---|
+| Pre-fix reproduction | Four unit failures; exact race fails in both browsers | `capacity-unit-red.log`, `race-browser-red.log` |
+| Capacity browser integration | 8 passed, 4 per browser; 47.3s | `capacity-browser-green.log` |
+| Final `pnpm verify` | 454 unit / 10 Rust passed; typecheck 0 errors/warnings; production build passed | `verify-final.log` |
+| Pinned assets / WASM | 27 files verified; Rust/WASM build passed | `assets-verify.log`, `wasm-build.log` |
+| Direct storage byte probe | Oversized direct write accepted; application control remains rejected | `byte-boundary-probe.log`, `byte-boundary.probe.test.ts`, `verify-final.log` |
+| Full browser E2E | 92 passed, 46 per browser; no skips; 9.7min; direct runner exit 0 | `e2e-repeat.log`, `e2e-repeat.exit` |
+| Full security suite | 44 passed, 22 per browser; no skips; 3.1min; direct runner exit 0 | `security-repeat.log`, `security-repeat.exit` |
+| Independent follow-up review | READY; no blocking findings; independent 35/35 focused unit rerun and final logs/exit-status checks passed | Local read-only review |
+
+Execution caveat: the initial `pnpm` security session reported 44 passing cases,
+but the execution tool returned SIGTERM/143. The initial full E2E session ended
+with the same status after 83 passing cases, without a final suite result. A
+first restart was correctly refused because that interrupted run had left its
+owned loopback preview server running; the server was verified and stopped.
+The unchanged full suites were then run directly, with separate result files and
+explicit exit-status capture:
+
+```sh
+node node_modules/@playwright/test/cli.js test --config playwright.security.config.ts --output .cache/phase-a-remediation/security-repeat-results
+node node_modules/@playwright/test/cli.js test --output .cache/phase-a-remediation/e2e-repeat-results
+```
+
+Both completed with exit 0. The E2E repeat ran alone; its local runner and elapsed
+time record are `run-e2e.py` and `e2e-repeat.elapsed` in the evidence directory.
+The source of the earlier SIGTERM was not established. These are execution
+interruptions, not observed assertion failures; the interrupted E2E attempt is
+not counted as a completed gate. No application code, assertions, skips, retries
+or worker count changed between attempts.
+
+The prior performance measurements remain historical evidence. This correction
+does not change indexing, retrieval, corpus limits or context selection; those
+benchmarks were not rerun. Existing storage/memory and race-losing indexing
+limitations remain. No semantic grounding work, generation-contract change,
+dependency change, repository cleanup or release preparation is included.
+
+**Recommendation: READY for the next Phase A review/approval step.** Independent
+closing review passed; no further code correction was requested. This is local
+remediation readiness, not release or deployment approval.
+The original signed commits are preserved, and a live metadata check still
+reported the repository as PRIVATE. No push, merge, tag, release, deployment or
+visibility change is authorized here.

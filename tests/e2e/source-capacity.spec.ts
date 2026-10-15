@@ -89,6 +89,33 @@ async function deleteFirst(page: Page) {
   await expect(page.locator('.source-open')).toHaveCount(49);
 }
 
+// Delay delivery of one native IndexedDB success event, not the transaction.
+// Its captured 50-source result can then finish after a newer 49-source read.
+async function observeRefreshes(page: Page) {
+  await page.addInitScript(() => {
+    const target = window as any;
+    target.holdNextSources = false; target.heldSources = [];
+    const held = new WeakSet<IDBRequest>();
+    const getAll = IDBIndex.prototype.getAll, listen = EventTarget.prototype.addEventListener;
+    IDBIndex.prototype.getAll = function (...args) {
+      const request = getAll.apply(this, args);
+      if (this.objectStore.name === 'sources' && target.holdNextSources) {
+        target.holdNextSources = false; held.add(request);
+      }
+      return request;
+    };
+    EventTarget.prototype.addEventListener = function (type, callback, options) {
+      if (this instanceof IDBRequest && held.has(this) && type === 'success' && callback) {
+        const request = this;
+        return listen.call(this, type, event => {
+          target.heldSources.push(() => typeof callback === 'function' ? callback.call(request, event) : callback.handleEvent(event));
+        }, options);
+      }
+      return listen.call(this, type, callback, options);
+    };
+  });
+}
+
 test('capacity, sequential overflow accounting, full drops, deletion and reopening use real browser storage', async ({ page }) => {
   await observeImports(page); await ready(page);
   await expect(page.locator('.count-badge')).toHaveText('0 / 50');
@@ -165,6 +192,35 @@ test('two tabs compete for the final slot and an explicit refresh recovers from 
   expect((await stored(page)).sourceIds).toHaveLength(50);
 });
 
+test('an older 50-source refresh cannot overwrite a newer 49-source refresh or disable imports', async ({ page, context }) => {
+  await observeRefreshes(page); await ready(page); await seed(page, 50);
+  const other = await context.newPage(); await ready(other);
+  await expect(other.locator('.count-badge')).toHaveText('50 / 50');
+  const refresh = page.getByRole('button', { name: 'Refresh sources', exact: true });
+  await page.evaluate(() => (window as any).holdNextSources = true);
+  await refresh.click();
+  await expect.poll(() => page.evaluate(() => (window as any).heldSources.length)).toBe(1);
+  await deleteFirst(other);
+  await refresh.click(); await expect(page.locator('.count-badge')).toHaveText('49 / 50');
+  const fresh = await stored(page);
+  await page.evaluate(async () => {
+    for (const release of (window as any).heldSources.splice(0)) release();
+    // Resolve the IDB-backed promises and flush their UI update before asserting.
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
+  await expect(page.locator('.count-badge')).toHaveText('49 / 50');
+  await expect(page.locator('.source-open')).toHaveCount(49);
+  const add = page.getByRole('button', { name: 'Add sources', exact: true });
+  await expect(add).toBeEnabled(); expect(await stored(page)).toEqual(fresh);
+  // A stale revision would reject this real chooser import despite 49 rows.
+  const chooser = page.waitForEvent('filechooser'); await add.click();
+  await (await chooser).setFiles(smallFile('after-overlap.txt'));
+  await expect(page.locator('.source-open')).toHaveCount(50, { timeout: 180_000 });
+  await expect(page.locator('.import-report')).toContainText('Imported: 1 · Failed: 0');
+  const after = await stored(page);
+  expect(after.revision).toBe(fresh.revision + 1); expect(after.sourceIds).toHaveLength(50);
+});
+
 test('fifty source rows and capacity controls remain accessible in both languages and themes on narrow screens', async ({ page }, info) => {
   await ready(page); await seed(page, 50);
   for (const language of ['en', 'de']) {
@@ -181,10 +237,12 @@ test('fifty source rows and capacity controls remain accessible in both language
         await page.locator('.source-open').last().focus(); await expect(page.locator('.source-open').last()).toBeInViewport();
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
         if (width === 375) await page.screenshot({ path: `.cache/phase-a/${info.project.name}-${language}-${theme}-375.png`, fullPage: false });
+        if (width === 375 || width === 768) {
+          await page.evaluate(readFileSync(resolve('node_modules/axe-core/axe.min.js'), 'utf8'));
+          const violations = await page.evaluate(async () => (window as any).axe.run('#sources-panel', { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'] } }).then((r: any) => r.violations.map((v: any) => ({ id: v.id, targets: v.nodes.map((n: any) => n.target) }))));
+          expect(violations, `${language}/${theme}/${width}px`).toEqual([]);
+        }
       }
-      await page.evaluate(readFileSync(resolve('node_modules/axe-core/axe.min.js'), 'utf8'));
-      const violations = await page.evaluate(async () => (window as any).axe.run('#sources-panel', { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'] } }).then((r: any) => r.violations.map((v: any) => ({ id: v.id, targets: v.nodes.map((n: any) => n.target) }))));
-      expect(violations).toEqual([]);
     }
   }
 });

@@ -153,8 +153,9 @@ describe('source capacity and unchanged notebook limits', () => {
     expect(state.sources[0].original.size).toBe(LIMITS.fileBytes); expect(statuses()).toEqual(['imported']);
   });
   it('keeps the ten-MiB check before any file read', async () => {
-    const oversized = observedFile('large.txt'); Object.defineProperty(oversized.value, 'size', { value: LIMITS.fileBytes + 1 });
-    await controller.importFiles([oversized.value]); expect(oversized.read).not.toHaveBeenCalled(); expect(pipeline.index).not.toHaveBeenCalled();
+    const oversized = new File([new Uint8Array(LIMITS.fileBytes + 1)], 'large.txt');
+    const read = vi.spyOn(oversized, 'arrayBuffer');
+    await controller.importFiles([oversized]); expect(read).not.toHaveBeenCalled(); expect(pipeline.index).not.toHaveBeenCalled();
     expect(state.errorMessage?.key).toBe('runtime.fileTooLarge'); expect(statuses()).toEqual(['failed']);
   });
   it('preserves existing embedding compatibility checks before reading an additional file', async () => {
@@ -234,6 +235,70 @@ describe('sequential import accounting and cancellation', () => {
     const refreshing = controller.refreshSources(); await loaded.promise; await controller.createNotebook('New selection');
     const selected = state.activeNotebook!.id; finish.resolve(); await refreshing;
     expect(state.activeNotebook!.id).toBe(selected); expect(state.sources).toEqual([]);
+  });
+  it('keeps the newer 49-source refresh when the older 50-source snapshot completes last', async () => {
+    await seed(50);
+    const removed = state.sources[0], loaded = deferred<void>(), finish = deferred<void>();
+    const load = storage.loadNotebook.bind(storage);
+    vi.spyOn(storage, 'loadNotebook').mockImplementationOnce(async (...args) => {
+      const data = await load(...args); loaded.resolve(); await finish.promise; return data;
+    });
+    const older = controller.refreshSources(); await loaded.promise;
+    const other = new BenchStorage();
+    try { await other.deleteSource(removed.id, removed.notebookId); } finally { await other.close(); }
+    await controller.refreshSources();
+    expect(state.sources).toHaveLength(49); expect(state.activeNotebook!.revision).toBe(51);
+    const fresh = state;
+    finish.resolve(); await older;
+    expect(state).toBe(fresh); // No stale snapshot or post-refresh side effects may publish.
+    expect(state.sources).toHaveLength(49); expect(state.activeNotebook!.revision).toBe(51);
+    await controller.importFiles([file('after-overlap.txt')]);
+    expect(state.importBatch?.status).toBe('complete'); expect(state.sources).toHaveLength(50);
+    expect(state.activeNotebook!.revision).toBe(52);
+  });
+  it('does not publish an older snapshot when the newer manual refresh fails', async () => {
+    await seed(1);
+    const loaded = deferred<void>(), finish = deferred<void>(), load = storage.loadNotebook.bind(storage);
+    vi.spyOn(storage, 'loadNotebook').mockImplementationOnce(async (...args) => {
+      const data = await load(...args); loaded.resolve(); await finish.promise; return data;
+    }).mockRejectedValueOnce(new DOMException('blocked', 'SecurityError'));
+    const older = controller.refreshSources(); await loaded.promise; await controller.refreshSources();
+    const failed = state; expect(state.error).not.toBeNull();
+    finish.resolve(); await older; expect(state).toBe(failed);
+  });
+  it.each(['manual', 'rename'] as const)('also fences an older %s refresh when manual and rename-triggered refreshes overlap', async olderOperation => {
+    await seed(50);
+    const removed = state.sources[0], loaded = deferred<void>(), finish = deferred<void>(), load = storage.loadNotebook.bind(storage);
+    vi.spyOn(storage, 'loadNotebook').mockImplementationOnce(async (...args) => {
+      const data = await load(...args); loaded.resolve(); await finish.promise; return data;
+    });
+    const older = olderOperation === 'manual' ? controller.refreshSources() : controller.renameNotebook('Updated notebook');
+    await loaded.promise;
+    const other = new BenchStorage();
+    try { await other.deleteSource(removed.id, removed.notebookId); } finally { await other.close(); }
+    if (olderOperation === 'manual') await controller.renameNotebook('Updated notebook'); else await controller.refreshSources();
+    const fresh = state; expect(state.sources).toHaveLength(49); expect(state.activeNotebook!.name).toBe('Updated notebook');
+    finish.resolve(); await older;
+    expect(state).toBe(fresh); expect(state.activeNotebook!.revision).toBe(51);
+  });
+  it('does not report a delayed failure after a newer manual refresh succeeds', async () => {
+    const loaded = deferred<void>(), finish = deferred<void>();
+    vi.spyOn(storage, 'loadNotebook').mockImplementationOnce(async () => {
+      loaded.resolve(); await finish.promise; throw new DOMException('blocked', 'SecurityError');
+    });
+    const older = controller.refreshSources(); await loaded.promise; await controller.refreshSources();
+    const fresh = state; finish.resolve(); await older;
+    expect(state).toBe(fresh); expect(state.error).toBeNull();
+  });
+  it('cancellation invalidates an in-flight manual refresh in the same notebook', async () => {
+    await seed(1);
+    const loaded = deferred<void>(), finish = deferred<void>(), load = storage.loadNotebook.bind(storage);
+    vi.spyOn(storage, 'loadNotebook').mockImplementationOnce(async (...args) => {
+      const data = await load(...args); loaded.resolve(); await finish.promise; return data;
+    });
+    const refreshing = controller.refreshSources(); await loaded.promise; controller.cancel();
+    const canceled = state; finish.resolve(); await refreshing; expect(state).toBe(canceled);
+    await controller.refreshSources(); expect(state.sources).toHaveLength(1); expect(state.error).toBeNull();
   });
   it('clears outdated search results after explicit source refresh', async () => {
     await seed(1); const removed = state.sources[0];

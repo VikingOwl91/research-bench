@@ -38,6 +38,7 @@ export class ResearchBenchController {
   private abortController: AbortController | null = null;
   private jobId = 0;
   private importBatchId = 0;
+  private refreshRequestId = 0;
   private viewRevision = 0;
   private configRevision = 0;
   private initialization: Promise<void> | null = null;
@@ -85,11 +86,11 @@ export class ResearchBenchController {
       } catch (error) { this.report(error); }
     })();
   }
-  private async refresh(id = this.state.activeNotebook?.id, current: () => boolean = () => true) {
+  private async refresh(id = this.state.activeNotebook?.id, current: () => boolean = () => true, request = ++this.refreshRequestId) {
     const view = this.viewRevision;
     const notebooks = await this.storage.listNotebooks();
     const data = id ? await this.storage.loadNotebook(id) : null;
-    if (view !== this.viewRevision || !current()) return;
+    if (request !== this.refreshRequestId || view !== this.viewRevision || !current()) return;
     this.publish({ notebooks, activeNotebook: data?.notebook ?? null, sources: data?.sources ?? [], messages: data?.messages ?? [], artifacts: data?.artifacts ?? [] });
     this.rememberSelection();
   }
@@ -195,11 +196,13 @@ export class ResearchBenchController {
   async refreshSources() {
     const notebookId = this.state.activeNotebook?.id;
     if (!notebookId || this.state.busy) return;
+    // Share the publication fence with every refresh caller, without queuing reads.
+    const request = ++this.refreshRequestId;
     const job = this.jobId;
     const revision = this.state.activeNotebook!.revision;
-    const current = () => this.jobId === job && !this.state.busy && this.state.activeNotebook?.id === notebookId;
+    const current = () => request === this.refreshRequestId && this.jobId === job && !this.state.busy && this.state.activeNotebook?.id === notebookId;
     try {
-      await this.refresh(notebookId, current);
+      await this.refresh(notebookId, current, request);
       if (current()) {
         const staleCapacityError = ['runtime.sourceLimit', 'runtime.crossTabSourcesChanged', 'runtime.storageConflict'].includes(this.state.errorMessage?.key ?? '');
         this.publish({ ...(this.state.activeNotebook?.revision !== revision ? { searchHits: [] } : {}), ...(staleCapacityError ? { error: null } : {}) });
