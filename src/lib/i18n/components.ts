@@ -17,6 +17,8 @@ export const componentMessages = {
   'components.viewer.highlight': { en: 'The cited passage is highlighted in the source text.', de: 'Der zitierte Ausschnitt ist im Quelltext markiert.' },
   'components.viewer.noHighlight': { en: 'No valid highlight is available on this page.', de: 'Auf dieser Seite ist keine gültige Markierung verfügbar.' },
   'components.viewer.unavailable': { en: 'This page is unavailable.', de: 'Diese Seite ist nicht verfügbar.' },
+  'components.viewer.hiddenText': { en: 'Dotted text is not visible in the original PDF rendering (invisible or white text). It is indexed and searchable like all other text.', de: 'Gepunktet unterstrichener Text ist in der ursprünglichen PDF-Anzeige nicht sichtbar (unsichtbarer oder weißer Text). Er wird wie jeder andere Text indexiert und durchsucht.' },
+  'components.viewer.textlessPages': { en: 'Pages without extractable text: {count} of {total}. Scanned or graphic-only pages are not indexed (no OCR in this version).', de: 'Seiten ohne extrahierbaren Text: {count} von {total}. Eingescannte oder reine Grafikseiten werden nicht indexiert (kein OCR in dieser Version).' },
   'components.podcast.language': { en: 'Language', de: 'Sprache' },
   'components.podcast.english': { en: 'English', de: 'Englisch' },
   'components.podcast.german': { en: 'German (experimental)', de: 'Deutsch (experimentell)' },

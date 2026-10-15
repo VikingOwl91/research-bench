@@ -6,7 +6,8 @@ export type GeneratorKind = 'summary' | 'faq' | 'study';
 export type StudioKind = GeneratorKind | 'podcast';
 export type PodcastLanguage = 'de' | 'en';
 export type PodcastSpeaker = 'A' | 'B';
-export interface PageText { page: number; text: string; }
+export interface HiddenSpan { start: number; end: number; kind: 'invisible' | 'white'; }
+export interface PageText { page: number; text: string; hiddenSpans?: HiddenSpan[]; }
 export interface Chunk {
   id: string;
   notebookId: string;

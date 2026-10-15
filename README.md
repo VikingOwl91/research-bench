@@ -313,7 +313,13 @@ documents, purpose, contracts and provider configuration.
 
 - Text-based PDF, UTF-8 Markdown and TXT; scanned/image-only PDFs need OCR and are rejected.
 - 10 MiB/file, ten sources, 500,000 canonical characters and 1,000 chunks/notebook.
-- A five-minute local job watchdog prevents indefinite processing; smaller sources may be needed.
+  Character limits count **extracted** text: PDF extraction covers text within the
+  page bounds (invisible and white text are extracted; graphic-only pages are not),
+  so a PDF's extracted text can be smaller than its visible content, and pages
+  without extractable text are reported in the source viewer.
+- A five-minute local job watchdog prevents indefinite processing; the watchdog
+  resets while a job keeps reporting progress, so sources within the documented
+  limits index to completion; smaller sources may still be needed on slow devices.
 - Fixed-size chunking is simple and testable, but can cut semantic boundaries.
 - No cloud sync, collaborative accounts or encryption at rest beyond the browser's storage protections.
 - Primary acceptance browsers are Chromium and Firefox, including CPU/WASM without WebGPU.

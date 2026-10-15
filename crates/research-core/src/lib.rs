@@ -7,10 +7,31 @@ pub const MAX_FILE_BYTES: usize = 10 * 1024 * 1024;
 pub const MAX_CHARACTERS: usize = 500_000;
 pub const MAX_PAGES: usize = 2_000;
 
+/// A UTF-16 span of a page's canonical text that is not visible in the
+/// original PDF rendering (invisible render mode or near-white fill color).
+/// Offsets are half-open UTF-16 offsets into `text`, matching the citation
+/// contract. Absent for text sources and for PDFs without hidden text.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct HiddenSpan {
+    pub start: u32,
+    pub end: u32,
+    pub kind: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PageText {
     pub page: u32,
     pub text: String,
+    #[serde(default, rename = "hiddenSpans", skip_serializing_if = "Option::is_none")]
+    pub hidden_spans: Option<Vec<HiddenSpan>>,
+}
+
+/// Per-character visibility derived from Pdfium render mode and fill color.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CharVisibility {
+    Visible,
+    Invisible,
+    White,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -30,10 +51,85 @@ pub struct SearchResult {
 /// Normalize once, before chunk offsets are calculated. Do not collapse spaces:
 /// preserve prose, Markdown indentation and the original page layout as text.
 pub fn canonicalize(text: &str) -> String {
-    text.trim_start_matches('\u{feff}')
-        .replace("\r\n", "\n")
-        .replace('\r', "\n")
-        .replace('\0', "")
+    canonicalize_with_visibility(text, &[]).0
+}
+
+/// Canonicalize like [`canonicalize`] while carrying per-character visibility
+/// flags through the exact same transformations, so hidden spans are reported
+/// in the coordinates of the canonical text. `visibility[i]` describes the
+/// i-th char of `text`; missing flags are treated as visible.
+pub fn canonicalize_with_visibility(
+    text: &str,
+    visibility: &[CharVisibility],
+) -> (String, Option<Vec<HiddenSpan>>) {
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = String::with_capacity(text.len());
+    let mut spans: Vec<(u32, u32, u8)> = Vec::new(); // (start, end, kind: 1 invisible, 2 white)
+    let mut utf16 = 0u32;
+    let mut run: Option<(u32, u8)> = None;
+    let mut started = false;
+    let mut index = 0usize;
+    let close_run = |spans: &mut Vec<(u32, u32, u8)>, run: &mut Option<(u32, u8)>, end: u32| {
+        if let Some((start, kind)) = run.take() {
+            if end > start {
+                spans.push((start, end, kind));
+            }
+        }
+    };
+    while index < chars.len() {
+        let current = chars[index];
+        let vis = visibility.get(index).copied().unwrap_or(CharVisibility::Visible);
+        if !started && current == '\u{feff}' {
+            index += 1;
+            continue;
+        }
+        started = true;
+        if current == '\0' {
+            index += 1;
+            continue;
+        }
+        let emitted = if current == '\r' {
+            if index + 1 < chars.len() && chars[index + 1] == '\n' {
+                index += 1;
+            }
+            '\n'
+        } else {
+            current
+        };
+        match vis {
+            CharVisibility::Visible => close_run(&mut spans, &mut run, utf16),
+            CharVisibility::Invisible | CharVisibility::White => {
+                let kind = if vis == CharVisibility::Invisible { 1 } else { 2 };
+                match &mut run {
+                    Some((_, existing)) => {
+                        if kind == 1 {
+                            *existing = 1;
+                        }
+                    }
+                    None => run = Some((utf16, kind)),
+                }
+            }
+        }
+        out.push(emitted);
+        utf16 += emitted.len_utf16() as u32;
+        index += 1;
+    }
+    close_run(&mut spans, &mut run, utf16);
+    let hidden_spans = if spans.is_empty() {
+        None
+    } else {
+        Some(
+            spans
+                .into_iter()
+                .map(|(start, end, kind)| HiddenSpan {
+                    start,
+                    end,
+                    kind: if kind == 1 { "invisible" } else { "white" }.to_string(),
+                })
+                .collect(),
+        )
+    };
+    (out, hidden_spans)
 }
 
 pub fn parse_text_bytes(bytes: &[u8]) -> Result<Vec<PageText>, String> {
@@ -50,7 +146,7 @@ pub fn parse_text_bytes(bytes: &[u8]) -> Result<Vec<PageText>, String> {
     if text.trim().is_empty() {
         return Err("Die Quelle enthält keinen durchsuchbaren Text.".into());
     }
-    Ok(vec![PageText { page: 1, text }])
+    Ok(vec![PageText { page: 1, text, hidden_spans: None }])
 }
 
 fn validate_file_size(bytes: &[u8]) -> Result<(), String> {
@@ -221,13 +317,64 @@ mod browser {
                 if extracted.len() < 0 || extracted.len() as usize > MAX_CHARACTERS - total {
                     return Err(js_error("Die Quelle überschreitet 500.000 extrahierte Zeichen.".into()));
                 }
-                let text = canonicalize(&extracted.all());
+                let all = extracted.all();
+                // Per-character visibility from render mode and fill color. Only
+                // characters whose origin lies on the page are considered,
+                // mirroring the bounded extraction used for the page text. The
+                // flags are used only when the aligned char sequence matches the
+                // extracted text exactly, so extraction itself never changes.
+                let page_rect = page.page_size();
+                let (page_left, page_right) = (page_rect.left().value as f64, page_rect.right().value as f64);
+                let (page_bottom, page_top) = (page_rect.bottom().value as f64, page_rect.top().value as f64);
+                let mut visibility: Option<Vec<CharVisibility>> = None;
+                let mut raw = String::with_capacity(all.len());
+                let mut flags: Vec<CharVisibility> = Vec::new();
+                let mut aligned = true;
+                for character in extracted.chars().iter() {
+                    let (x, y) = match character.origin() {
+                        Ok(origin) => origin,
+                        Err(_) => { aligned = false; break; }
+                    };
+                    let (x, y) = (x.value as f64, y.value as f64);
+                    if !(page_left <= x && x <= page_right && page_bottom <= y && y <= page_top) {
+                        continue;
+                    }
+                    let flag = match character.render_mode() {
+                        Ok(PdfPageTextRenderMode::Invisible) => CharVisibility::Invisible,
+                        _ => match character.fill_color() {
+                            Ok(color) if color.alpha() > 0
+                                && color.red() >= 240
+                                && color.green() >= 240
+                                && color.blue() >= 240 =>
+                            {
+                                CharVisibility::White
+                            }
+                            _ => CharVisibility::Visible,
+                        },
+                    };
+                    match character.unicode_string() {
+                        Some(unit) => {
+                            for c in unit.chars() {
+                                raw.push(c);
+                                flags.push(flag);
+                            }
+                        }
+                        None => { aligned = false; break; }
+                    }
+                }
+                if aligned && raw == all {
+                    visibility = Some(flags);
+                }
+                let (text, hidden_spans) = match &visibility {
+                    Some(flags) => canonicalize_with_visibility(&all, flags),
+                    None => (canonicalize(&all), None),
+                };
                 total += text.chars().count();
                 if total > MAX_CHARACTERS {
                     return Err(js_error("Die Quelle überschreitet 500.000 extrahierte Zeichen.".into()));
                 }
                 has_text |= !text.trim().is_empty();
-                pages.push(PageText { page: index as u32 + 1, text });
+                pages.push(PageText { page: index as u32 + 1, text, hidden_spans });
             }
             if !has_text {
                 return Err(js_error("Die PDF enthält keinen extrahierbaren Text. Gescannte PDFs benötigen OCR, die hier nicht enthalten ist.".into()));
@@ -244,7 +391,81 @@ mod tests {
         PageText {
             page,
             text: text.into(),
+            hidden_spans: None,
         }
+    }
+
+    #[test]
+    fn canonicalize_with_visibility_matches_canonicalize_without_flags() {
+        let cases = [
+            "",
+            "plain text",
+            "\u{feff}\u{feff}BOM twice",
+            "a\r\nb\rc\0d",
+            "mixed \u{feff}mid\0 and\r\nendings\r",
+            "😀 emoji and ümläuts",
+        ];
+        for case in cases {
+            let (text, spans) = canonicalize_with_visibility(case, &[]);
+            assert_eq!(text, canonicalize(case), "case: {case:?}");
+            assert_eq!(spans, None, "case: {case:?}");
+        }
+    }
+
+    #[test]
+    fn canonicalize_with_visibility_reports_hidden_spans_in_utf16_offsets() {
+        // "ab😀cd": UTF-16 offsets 0..6; the astral char occupies 2..4.
+        // Flags are per char: a, b, 😀, c, d.
+        let text = "ab😀cd";
+        let flags = [
+            CharVisibility::Visible,
+            CharVisibility::Visible,
+            CharVisibility::Invisible,
+            CharVisibility::White,
+            CharVisibility::Visible,
+        ];
+        let (canonical, spans) = canonicalize_with_visibility(text, &flags);
+        assert_eq!(canonical, text);
+        let spans = spans.expect("hidden spans");
+        // The invisible run absorbs the adjacent white char (invisible has priority).
+        assert_eq!(spans.len(), 1);
+        assert_eq!((spans[0].start, spans[0].end, spans[0].kind.as_str()), (2, 5, "invisible"));
+        // Offsets slice the canonical text exactly.
+        let utf16: Vec<u16> = canonical.encode_utf16().collect();
+        for span in &spans {
+            assert!(span.end <= utf16.len() as u32);
+            assert!(span.start < span.end);
+        }
+        assert_eq!(String::from_utf16(&utf16[2..5]).unwrap(), "😀c");
+    }
+
+    #[test]
+    fn canonicalize_with_visibility_merges_runs_and_tracks_transformations() {
+        // CRLF collapses to one LF; the hidden run spans the merged newline.
+        let text = "a\r\nb";
+        let flags = [
+            CharVisibility::Visible,
+            CharVisibility::Invisible,
+            CharVisibility::Invisible,
+            CharVisibility::Visible,
+        ];
+        let (canonical, spans) = canonicalize_with_visibility(text, &flags);
+        assert_eq!(canonical, "a\nb");
+        let spans = spans.expect("hidden spans");
+        assert_eq!(spans.len(), 1);
+        assert_eq!((spans[0].start, spans[0].end), (1, 2));
+        // NUL bytes are dropped and do not break span coordinates.
+        let text = "x\0y";
+        let flags = [
+            CharVisibility::Visible,
+            CharVisibility::Invisible,
+            CharVisibility::White,
+        ];
+        let (canonical, spans) = canonicalize_with_visibility(text, &flags);
+        assert_eq!(canonical, "xy");
+        let spans = spans.expect("hidden spans");
+        assert_eq!(spans.len(), 1);
+        assert_eq!((spans[0].start, spans[0].end, spans[0].kind.as_str()), (1, 2, "white"));
     }
 
     #[test]
