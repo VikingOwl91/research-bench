@@ -105,8 +105,10 @@ production-security or universal reproducibility certification is claimed.
 Required maintainer decisions include:
 
 - Accept disclosed prototype and historical publication risks.
-- Enable and verify a private vulnerability-reporting channel (or publish a
-  verified private contact); see [SECURITY.md](../SECURITY.md).
+- Immediately after separately authorized public conversion, enable GitHub
+  private vulnerability reporting and verify the reporting form and notification
+  settings before announcement; see [SECURITY.md](../SECURITY.md). It is not
+  claimed enabled while this repository remains private.
 - Approve any remaining advisory/license findings with a documented disposition.
 - Separately authorize branch publication/merge, repository visibility conversion,
   signed release tag, GitHub Release and deployment. None follows automatically

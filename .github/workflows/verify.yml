@@ -48,6 +48,7 @@ jobs:
             .cache/tools
           key: ${{ steps.browser-assets.outputs.cache-primary-key }}
       - run: pnpm verify
+      - run: node scripts/check-build-paths.mjs
       - run: pnpm source:prepare --expected-head "${{ github.sha }}"
       - run: pnpm exec playwright install --with-deps chromium firefox
       - name: Provide isolated audio output for native playback tests
