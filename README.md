@@ -8,6 +8,9 @@ A browser research workbench built for the Everlast Consulting test assignment:
 upload documents, ask questions with source references, inspect the cited passage, and
 turn a notebook into a summary, FAQ, study guide or a cited two-host podcast.
 
+See [assignment and scope](docs/assignment/README.md) for the original brief,
+chosen boundaries and a dated NotebookLM feature mapping.
+
 Documents, chunking, embeddings, indexing and semantic search run locally.
 Generation uses your own **Mistral La Plateforme** key by default, with
 **OpenRouter** as an explicit alternative. There is no application backend.
