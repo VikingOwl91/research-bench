@@ -135,7 +135,7 @@ export const pageMessages = {
   "page.search": {"en": "Search", "de": "Suchen"},
   "page.sendQuestion": {"en": "Send question", "de": "Frage senden"},
   "page.searchFootnote": {"en": "Semantic search · local embeddings · no data sent", "de": "Semantische Suche · lokale Embeddings · kein Datenversand"},
-  "page.chatFootnote": {"en": "Citations link to source passages; factual support is not automatically verified. Generated content can contain unsupported claims. Check the sources.", "de": "Zitate verlinken Quellpassagen; die inhaltliche Belegbarkeit wird nicht automatisch geprüft. Generierte Inhalte können unbelegte Aussagen enthalten. Prüfe die Quellen."},
+  "page.chatFootnote": {"en": "Citations link to source passages. Sections whose claims cannot be matched to the cited passages are removed automatically; factual support is not automatically verified beyond that. Generated content can contain unsupported claims. Check the sources.", "de": "Zitate verlinken Quellpassagen. Abschnitte, deren Aussagen nicht in den zitierten Passagen gefunden werden, werden automatisch entfernt; die inhaltliche Belegbarkeit wird nicht automatisch geprüft. Generierte Inhalte können unbelegte Aussagen enthalten. Prüfe die Quellen."},
   "page.sessionKeySaved": {"en": "Key saved for this session", "de": "Key für diese Sitzung hinterlegt"},
   "page.addKey": {"en": "Add API key", "de": "API-Key hinzufügen"},
   "page.summaryTab": {"en": "Overview", "de": "Überblick"},

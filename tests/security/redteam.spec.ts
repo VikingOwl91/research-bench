@@ -148,7 +148,11 @@ test('untrusted documents, filenames, persisted citations and model output remai
     const body = checkRequest(route, 'mistral');
     expect(body.messages[0].content).toMatch(/nicht vertrauenswürdige DATEN/);
     const input = JSON.parse(body.messages.at(-1).content);
-    expect(JSON.stringify(input).includes('SYSTEM OVERRIDE')).toBe(true);
+    // Instruction-like sentences are neutralized before they enter the prompt;
+    // benign document content (including the fictional measurement) is preserved.
+    expect(JSON.stringify(input).includes('SYSTEM OVERRIDE')).toBe(false);
+    expect(JSON.stringify(input).includes('[instruction-like content removed]')).toBe(true);
+    expect(JSON.stringify(input).includes('redteamneedle42')).toBe(true);
     const source = input.sources.find((item: { text: string }) => item.text.includes('Bidi source')) ?? input.sources[0];
     await complete(route, { title: '<img onerror=alert(9)> Title', blocks: [{ heading: '<svg onload=alert(8)> Heading', text: '<script>alert(10)</script> javascript:alert(11) [phish](https://tracker.invalid/answer)', citationIds: [mode === 'citation' ? 'C99' : source.id] }] });
   });

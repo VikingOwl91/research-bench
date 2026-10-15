@@ -624,5 +624,17 @@ export const runtimeMessages = {
   "runtime.rustPdfEncrypted": { en: "The PDF is encrypted or password-protected. Use an unprotected file.", de: "Die PDF ist verschlüsselt oder passwortgeschützt. Bitte eine ungeschützte Datei verwenden." },
   "runtime.rustPdfNotInitialized": { en: "Pdfium has not been initialized.", de: "Pdfium wurde noch nicht initialisiert." },
   "runtime.rustPdfUnavailable": { en: "Pdfium is unavailable.", de: "Pdfium ist nicht verfügbar." },
-  "runtime.rustPdfDamaged": { en: "The PDF is damaged or unreadable.", de: "Die PDF ist beschädigt oder kann nicht gelesen werden." }
+  "runtime.rustPdfDamaged": { en: "The PDF is damaged or unreadable.", de: "Die PDF ist beschädigt oder kann nicht gelesen werden." },
+  "runtime.unsupportedSectionRemoved": {
+    "en": "This section was removed because its claims could not be matched to the cited source passages.",
+    "de": "Dieser Abschnitt wurde entfernt, weil seine Aussagen nicht in den zitierten Quellpassagen gefunden wurden."
+  },
+  "runtime.unsupportedTurnRemoved": {
+    "en": "This contribution was removed because its claims could not be matched to the cited source passages.",
+    "de": "Dieser Beitrag wurde entfernt, weil seine Aussagen nicht in den zitierten Quellpassagen gefunden wurden."
+  },
+  "runtime.staleAbort": {
+    "en": "Aborted: the sources or settings changed while this was running. Please try again.",
+    "de": "Abgebrochen: Die Quellen oder Einstellungen haben sich währenddessen geändert. Bitte erneut versuchen."
+  }
 } as const satisfies Record<string, CatalogEntry>;
