@@ -1,24 +1,34 @@
-# ResearchBench · v0.0.4
+# ResearchBench · v0.1.0 candidate
 
 **Your sources. Your knowledge. Your browser.**
 
 **Live demo:** [research-bench.nachtigall.dev](https://research-bench.nachtigall.dev/)
 
 A browser research workbench built for the Everlast Consulting test assignment:
-upload documents, ask grounded questions, inspect the exact cited passage, and
+upload documents, ask questions with source references, inspect the cited passage, and
 turn a notebook into a summary, FAQ, study guide or a cited two-host podcast.
 
 Documents, chunking, embeddings, indexing and semantic search run locally.
 Generation uses your own **Mistral La Plateforme** key by default, with
 **OpenRouter** as an explicit alternative. There is no application backend.
 
+**Prototype:** source references and local heuristics do not prove that generated
+claims follow from the documents. Review generated content before relying on it.
+The live demo can run a different version from this candidate; its build identity
+is available at `/_app/version.json`.
+
 ## Run locally
 
-Requirements: Node.js 22.17 or later, pnpm 11.28.5, Rust/Cargo and the
-`wasm32-unknown-unknown` target. The first setup needs network access to download
-public dependencies and pinned model/runtime assets.
+Tested toolchain: Node.js **26.11.1**, pnpm **11.28.5**, Rust/Cargo **1.98.1**,
+Git, rustup and Python 3 (pinned Pdfium ZIP extraction). The package declares Node.js >=22.17; that lower bound is not a
+promise that every version has been tested. Rust is pinned in `rust-toolchain.toml`.
+The first setup needs network access to download public dependencies and pinned
+model/runtime assets. A private repository requires authorized GitHub access
+until the maintainer explicitly makes it public.
 
 ```sh
+git clone https://github.com/VikingOwl91/research-bench.git
+cd research-bench
 pnpm install --frozen-lockfile
 rustup target add wasm32-unknown-unknown
 pnpm assets:prepare
@@ -42,7 +52,10 @@ pinned because SvelteKit currently requires its JavaScript compiler API.
 
 ## What you can do
 
-- Create, rename and remove notebooks; import multiple PDF, Markdown and TXT sources.
+- Create, rename and remove notebooks; store up to **50 PDF, Markdown and TXT sources**
+  per notebook, subject to the text, chunk and browser-storage limits below.
+- See used/remaining capacity and per-file import results; imports run sequentially
+  and stop at the first failure or full notebook. Refresh sources to recover stale tabs.
 - Search semantically in German and English using local multilingual embeddings.
 - Ask questions and click citations to open the exact highlighted source span.
 - Generate summaries, FAQs and study guides with the same citation contract.
@@ -115,6 +128,11 @@ The renderer enforces ten minutes of decoded audio, 128 MiB of accounted audio
 buffers and a 30-second encoding watchdog. These bounds are not measurements of
 the browser's entire process heap. The recorded fixture benchmark and the open
 real-voice acceptance gates are in [the verification report](docs/verification.md).
+
+### Interface language and appearance
+
+System, Light and Dark appearance modes apply without reloading. System follows
+the browser preference; an explicit appearance choice is stored locally.
 
 The interface defaults to English, regardless of the browser language. Use the
 header language selector to switch the entire interface to German. This choice
@@ -210,7 +228,7 @@ automatic cross-provider or cross-region fallback.
 
 Chat uses the top six local retrieval results. Both adapters request a JSON
 schema and normalize into one client-side validated answer type. Only citation
-IDs from the actual submitted context can become clickable references.
+IDs from the selected context can become clickable references.
 Request and validation bounds derive from the same schema. A section may cite
 up to the number of distinct transmitted passages; there is no fixed twelve-reference
 cap. Size violations produce diagnostics without revealing response contents.
@@ -222,9 +240,23 @@ steer generated statements or include misleading/phishing text despite the
 system prompt and schema checks. Such output is displayed as escaped text,
 without automatic links, HTML or tool execution.
 
+Before transmission, a sentence-level EN/DE/FR sanitizer replaces recognized
+instruction-like source sentences. Original documents and the retrieval index are
+unchanged. Before new Chat/Studio output is returned for display or persistence,
+a deterministic support gate compares selected numeric literals and paired
+quotations with the sanitized excerpts. Unmatched specifics produce a removal
+notice. Podcast turns receive the same check before new TTS, and paused drafts
+are rechecked before resume. These are lexical heuristics, **not semantic proof**.
+They can miss false conclusions using existing numbers, invented names, unsupported
+prose, single-significant-digit values and answer/script titles. They can also
+remove supported wording, including ambiguous number formatting or benign quoted
+instructions. Historical saved output is not retrospectively verified. See the
+[current security limitations](docs/security/README.md).
+
 Studio generators use the whole canonical source text up to 24,000 characters,
 without repeated overlap. Larger notebooks use a round-robin selection of
-spread-out, non-overlapping passages from all sources. The UI shows selected
+spread-out, non-overlapping passages across sources until the budget is exhausted.
+Storing 50 sources does not mean all 50 participate in an answer. The UI shows selected
 sources, text coverage and the selection limitation. This is not advertised as
 a complete summary of a large notebook.
 
@@ -269,7 +301,7 @@ keys created by the setup scripts.
    browser when the user starts generation. The selected API connection is visible.
    For small notebooks, this selection can include the complete canonical source
    text; complete coverage is not a promise that only a few snippets leave the browser.
-   For podcasts, the grounded script's spoken contributions are additionally sent
+   For podcasts, the generated script's spoken contributions are additionally sent
    to that connection's speech API. Scripts, downloaded segments and finished MP3s
    persist locally. The voice probe sends fictional test text only. Mistral voice
    discovery makes an authenticated request to its EU voices endpoint; OpenRouter
@@ -294,7 +326,8 @@ keys created by the setup scripts.
    the app cannot selectively clear that cache. No user documents or keys are
    stored in these public asset files. It does not delete unrelated origin data or retract requests already processed
    by an external API. The non-content interface language preference is retained.
-   Static hosting can retain access metadata under its own policy.
+   The non-content appearance preference is retained too. Static hosting can
+   retain access metadata under its own policy.
 
 Authoritative sources (reviewed October 2026): [Mistral regional inference](https://docs.mistral.ai/inference/regional-inference),
 [Mistral training controls](https://help.mistral.ai/en/articles/347617-do-you-use-my-user-data-to-train-your-artificial-intelligence-models),
@@ -314,15 +347,28 @@ documents, purpose, contracts and provider configuration.
 - Text-based PDF, UTF-8 Markdown and TXT; scanned/image-only PDFs need OCR and are rejected.
 - 10 MiB/file, 50 sources, 500,000 canonical characters and 1,000 chunks/notebook.
   Character limits count **extracted** text: PDF extraction covers text within the
-  page bounds (invisible and white text are extracted; graphic-only pages are not),
-  so a PDF's extracted text can be smaller than its visible content, and pages
-  without extractable text are reported in the source viewer.
-- A five-minute local job watchdog prevents indefinite processing; the watchdog
-  resets while a job keeps reporting progress, so sources within the documented
-  limits index to completion; smaller sources may still be needed on slow devices.
+  page bounds and can retain invisible/near-white text while omitting graphic text
+  or overlapping runs. Rendering-property markers are partial provenance, not a
+  complete visibility test: clipping, backgrounds, overlays, blend modes and
+  alignment fallback can prevent detection. Above 1,000 provenance spans, the
+  viewer omits individual decorations with a notice, preserving text/citations.
+  Pages without extractable text are reported in the source viewer.
+- The five-minute local-job watchdog is an **inactivity** deadline reset by
+  progress, not a total CPU-time budget or guarantee that every valid input finishes.
+- Browser storage quotas, eviction, memory and performance vary. There is no total
+  notebook-byte capacity guarantee; 50 near-limit files need not fit on a device.
+  Large-file imports can pause the UI. See [Phase A measurements](docs/source-capacity-phase-a.md).
+- The shipped chooser/drop/controller rejects files above 10 MiB before reading or
+  indexing. The internal storage API does not independently enforce original-file
+  bytes; no application-reachable bypass was found. This low-severity hardening
+  gap remains documented in [the Phase A handoff](docs/source-capacity-phase-a.md#pre-existing-storage-byte-limit-gap).
 - Fixed-size chunking is simple and testable, but can cut semantic boundaries.
 - No cloud sync, collaborative accounts or encryption at rest beyond the browser's storage protections.
-- Primary acceptance browsers are Chromium and Firefox, including CPU/WASM without WebGPU.
+- Automated acceptance targets Playwright Chromium and Firefox on Linux, including
+  CPU/WASM without WebGPU. Use a current desktop browser and HTTPS or localhost.
+  Web Locks and native Web Audio are required for podcast generation/resume.
+  Responsive browser tests cover mobile widths; physical mobile devices and Safari
+  are not certified. Automated accessibility checks do not establish WCAG conformance.
 - Experimental WebLLM generation is an optional bonus and is not included in this version.
 
 The differentiator is the combination of zero server setup for the visitor,
@@ -356,7 +402,7 @@ experimental German speech option in both browsers.
 The reproducible checks, release gates and coverage limits are in
 [the verification report](docs/verification.md).
 
-## Static deployment and submission
+## Static hosting and release preparation
 
 Build from a clean committed checkout so the application and its source offer
 share the exact Git commit identity.
@@ -411,18 +457,16 @@ For public-origin checks, use `pnpm hosting:check --url <https-origin> --release
 and set `RESEARCHBENCH_HOSTING_URL` to that origin before running
 `pnpm test:hosting`. API calls in the hosting browser suite are mocked.
 
-Before submission, verify the exact production build on the live domain while
-the GitHub repository is still private. Complete real-key Mistral acceptance and
-check generated claims against the imported sources. Then the owner makes the
-repository public. Record a 6–8 minute English demo with OBS Studio and publish
-it as an unlisted YouTube video (hard limit: ten minutes), using
-[the recording script and acceptance checklist](docs/demo-script.md) and
-[the public NIST source corpus](docs/public-demo/README.md). Loom is not required.
-Prepare and verify chat, Summary, FAQ, Study Guide and podcast before recording;
-one optional live chat may be cancelled after 15 seconds or an error, with a
-clearly identified prepared answer as fallback. No recording-time API retries.
-The repo, live demo and video links go into the application reply. Recording,
-GitHub visibility, video upload and sending remain owner actions.
+The v0.1.0 candidate is prepared locally. GitHub remains private; push, merge,
+publication, signed tagging, a GitHub Release and deployment each require explicit
+maintainer authorization. See [the release checklist](docs/release-v0.1.0.md).
+CI success is separate from live-provider acceptance and deployment verification.
+
+The original assignment's 6–8 minute OBS/unlisted-YouTube demonstration outline
+and NIST inputs remain in [the demo script](docs/demo-script.md) and
+[public corpus](docs/public-demo/README.md). Prepare and check all generated
+outputs before recording. No automatic retries or real-key calls are required
+by the test suite.
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for redistribution notices.
 
@@ -454,6 +498,9 @@ contains the application source and pinned build/asset instructions; upstream
 packages remain available from their pinned sources, and the LGPL encoder's
 matching source is also served separately. Rebuilding an extracted archive
 starts a new local Git history and receives a new build identity. It does not
-fake the original commit or promise identical binary hashes. Retain published
+fake the original commit or promise identical binary hashes. Compressed archive
+bytes can vary with the compression toolchain; compare complete extracted member
+paths, modes, hashes and provenance before interpreting a compressed hash mismatch
+as a source change. See [release verification](docs/release-v0.1.0.md). Retain published
 source archives and license files across later activation and rollback so old
 open tabs continue to offer their matching source.

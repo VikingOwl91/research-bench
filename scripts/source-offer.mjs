@@ -111,7 +111,7 @@ The project/ directory contains only files tracked by that commit. No Git histor
 or generated build files are included. PROVENANCE.json lists modes and original
 Git blob identities; downloaded assets are pinned in project/scripts/assets-manifest.json.
 
-Rebuild with Node.js 26.11.1, pnpm 11.28.5, Rust 1.98.1, Git and rustup:
+Rebuild with Node.js 26.11.1, pnpm 11.28.5, Rust 1.98.1, Python 3, Git and rustup:
 
   cd project
   git init
