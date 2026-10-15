@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Exact, deterministic corresponding source. No history, network or Git mutation.
+// Exact corresponding source; canonical tar, toolchain-dependent gzip bytes.
+// No history, network or Git mutation.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
@@ -56,7 +57,7 @@ function encodeArchive(entries) {
   const blocks = [];
   for (const entry of entries) blocks.push(archiveHeader(entry.path, entry.bytes.length, entry.mode), entry.bytes, Buffer.alloc((512 - entry.bytes.length % 512) % 512));
   blocks.push(Buffer.alloc(1024));
-  return gzipSync(Buffer.concat(blocks), { level: 9 }); // gzip timestamp is zero; no path/owner/time metadata.
+  return gzipSync(Buffer.concat(blocks), { level: 9 }); // Zero timestamp/metadata; deflate bytes may vary with Node/zlib builds.
 }
 /** Strictly bounded parser for the portable tar subset emitted above. */
 export function decodeSourceArchive(bytes) {
@@ -110,7 +111,7 @@ The project/ directory contains only files tracked by that commit. No Git histor
 or generated build files are included. PROVENANCE.json lists modes and original
 Git blob identities; downloaded assets are pinned in project/scripts/assets-manifest.json.
 
-Rebuild with Node.js 26.11.1, pnpm 11.28.5, Rust 1.98.1, Git and rustup:
+Rebuild with Node.js 26.11.1, pnpm 11.28.5, Rust 1.98.1, Python 3, Git and rustup:
 
   cd project
   git init
