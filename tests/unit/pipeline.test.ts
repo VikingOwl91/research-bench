@@ -72,11 +72,13 @@ describe('progress-resetting watchdog (RB-RT-006)', () => {
     try {
       const signal = new AbortController().signal;
       const pending = pipeline.search(new Float32Array(384), 'Suche', undefined, 6, signal, vi.fn());
+      // Attach the rejection handler before advancing time so the rejection is never unhandled.
+      const assertion = expect(pending).rejects.toThrow(/fünf Minuten/);
       const worker = FakeWorker.instances[0];
       const id = worker.postMessage.mock.calls[0][0].id;
       worker.emit({ id, progress: { stage: 'Vorbereitung', current: 0, total: 1 } });
       await vi.advanceTimersByTimeAsync(300_000);
-      await expect(pending).rejects.toThrow(/fünf Minuten/);
+      await assertion;
       expect(worker.terminate).toHaveBeenCalledTimes(1);
     } finally { vi.useRealTimers(); }
   });

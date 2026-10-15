@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { AxeResults } from 'axe-core';
+import { requireAudioBackend } from './audio-backend';
 
 const endpoint = 'https://api.eu.mistral.ai/v1/chat/completions';
 const voicesEndpoint = 'https://api.eu.mistral.ai/v2/audio/voices';
@@ -139,6 +140,7 @@ test('appearance changes preserve a held real indexing job and its subsequent he
 });
 
 test('filled workflows keep audio identity while themes change and render accessible long-name citations at mobile, tablet and desktop widths', async ({ page }) => {
+  await requireAudioBackend(page);
   test.setTimeout(420_000);
   const errors: string[] = [], unexpected: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

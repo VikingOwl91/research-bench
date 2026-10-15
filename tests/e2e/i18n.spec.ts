@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 import { resolve } from 'node:path';
+import { requireAudioBackend } from './audio-backend';
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
 const endpoint = 'https://api.eu.mistral.ai/v1/chat/completions';
@@ -157,6 +158,7 @@ function wav() {
   return bytes.toString('base64');
 }
 test('podcast speech stays independently English; locale switching preserves rendering and active playback', async ({ page }) => {
+  await requireAudioBackend(page);
   await ready(page); await source(page); await key(page);
   await page.route('https://api.eu.mistral.ai/v2/audio/voices**', route => route.fulfill({ headers: cors, json: { data: [{ type: 'preset', slug: 'gb_oliver_curious', id: 'oliver' }, { type: 'preset', slug: 'gb_jane_neutral', id: 'jane' }], next_page_token: null } }));
   let scriptCalls = 0, speechCalls = 0, first: Route | undefined;
