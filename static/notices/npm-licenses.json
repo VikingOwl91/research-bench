@@ -682,6 +682,26 @@
       "declarationOnly": false
     },
     {
+      "name": "axe-core",
+      "version": "4.14.0",
+      "license": "MPL-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/dequelabs/axe-core.git"
+      },
+      "notices": [
+        {
+          "path": "LICENSE",
+          "sha256": "af175b9d96ee93c21a036152e1b905b0b95304d4ae8c2c921c7609100ba8df7e"
+        },
+        {
+          "path": "LICENSE-3RD-PARTY.txt",
+          "sha256": "4f8563870d0fca38bbc3e00b6f670cb7fa9f380ba9f26a7f7d1184a6b18b1653"
+        }
+      ],
+      "declarationOnly": false
+    },
+    {
       "name": "axobject-query",
       "version": "4.1.0",
       "license": "Apache-2.0",

@@ -37,7 +37,7 @@ source, rebuild instructions and upstream README accompany the deployed encoder.
 The deployed `/notices/npm-licenses.txt` and `/notices/rust-licenses.txt` preserve
 upstream permission, copyright and notice texts. The accompanying JSON files
 record exact versions, license declarations and SHA256 hashes of the collected
-notice files. This inventory includes all 118 installed npm packages and all 58
+notice files. This inventory includes all 119 installed npm package versions and all 58
 third-party Cargo.lock entries, including build/test, Node-only and non-WASM
 platform dependencies. It is intentionally broader than the browser bundle.
 The package lockfiles remain the dependency source/identity contracts.
@@ -52,7 +52,8 @@ Apache-2.0 notices and attribution remain available with the distribution.
 
 Transformers.js selects its browser export for the deployed Worker. Its Node
 sharp/libvips (LGPL-3.0-or-later) and onnxruntime-node dependencies are not shipped
-in the static application. Lightning CSS (MPL-2.0) is a build tool, also not
+in the static application. Lightning CSS (MPL-2.0) is a build tool; axe-core (MPL-2.0) is used only for
+automated accessibility testing. Neither is
 shipped as a native binary or modified source in the application. Rebuilding
 downloads those tools through the pinned lockfile. Their installation does not
 license the application or waive obligations if someone later redistributes
