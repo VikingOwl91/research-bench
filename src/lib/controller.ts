@@ -10,7 +10,7 @@ import { generateAnswer } from './providers';
 import { generatePodcastScript, resolvePodcastAudioConfig, synthesizePodcastTurn } from './podcast-providers';
 import { PodcastAudioEngine } from './audio/engine';
 import { BenchStorage, type StoredChunk } from './storage';
-import type { AppSnapshot, TextArtifact, ChatMessage, GeneratorKind, Progress, Provider, Source, SourceKind, PodcastArtifact, PodcastLanguage, PodcastFence, PodcastAudioConfig, PodcastRenderedAudio } from './types';
+import type { AppSnapshot, ImportBatch, ImportFileOutcome, TextArtifact, ChatMessage, GeneratorKind, Progress, Provider, Source, SourceKind, PodcastArtifact, PodcastLanguage, PodcastFence, PodcastAudioConfig, PodcastRenderedAudio } from './types';
 
 export interface PodcastLockManager {
   request<T>(name: string, options: { mode: 'exclusive'; ifAvailable: true }, callback: (lock: unknown | null) => Promise<T>): Promise<T>;
@@ -30,13 +30,14 @@ const PROVIDER_KEY = 'researchbench:provider';
 export class ResearchBenchController {
   private state: AppSnapshot = {
     notebooks: [], activeNotebook: null, sources: [], messages: [], artifacts: [], searchHits: [],
-    progress: null, busy: false, provider: 'mistral', hasKey: false, error: null
+    progress: null, busy: false, importBatch: null, provider: 'mistral', hasKey: false, error: null
   };
   private listeners = new Set<(state: AppSnapshot) => void>();
   private storage: BenchStorage;
   private pipeline: LocalPipeline;
   private abortController: AbortController | null = null;
   private jobId = 0;
+  private importBatchId = 0;
   private viewRevision = 0;
   private configRevision = 0;
   private initialization: Promise<void> | null = null;
@@ -84,11 +85,11 @@ export class ResearchBenchController {
       } catch (error) { this.report(error); }
     })();
   }
-  private async refresh(id = this.state.activeNotebook?.id) {
+  private async refresh(id = this.state.activeNotebook?.id, current: () => boolean = () => true) {
     const view = this.viewRevision;
     const notebooks = await this.storage.listNotebooks();
     const data = id ? await this.storage.loadNotebook(id) : null;
-    if (view !== this.viewRevision) return;
+    if (view !== this.viewRevision || !current()) return;
     this.publish({ notebooks, activeNotebook: data?.notebook ?? null, sources: data?.sources ?? [], messages: data?.messages ?? [], artifacts: data?.artifacts ?? [] });
     this.rememberSelection();
   }
@@ -110,7 +111,7 @@ export class ResearchBenchController {
     const wasBusy = this.state.busy;
     this.cancel();
     this.viewRevision += 1;
-    this.publish({ searchHits: [], error: null });
+    this.publish({ searchHits: [], error: null, importBatch: null });
     if (wasBusy) this.notifyDiscarded();
     try { await this.refresh(id); } catch (error) { this.report(error); }
   }
@@ -156,6 +157,9 @@ export class ResearchBenchController {
     if (wasBusy) this.notifyDiscarded();
   }
   cancel() {
+    const batch = this.state.importBatch;
+    if (batch?.status === 'running') this.publish({ importBatch: { ...batch, status: 'canceled', files: batch.files.map(file => ({ ...file,
+      status: file.status === 'importing' ? 'canceled' : file.status === 'pending' ? 'not-attempted' : file.status })) } });
     this.jobId += 1;
     this.abortController?.abort(); this.abortController = null;
     this.pipeline.cancel();
@@ -187,37 +191,92 @@ export class ResearchBenchController {
     catch (error) { if (this.jobId === id) this.report(error); }
     finally { if (this.jobId === id) { this.abortController = null; this.publish({ busy: false, progress: null }); } }
   }
+  /** Explicit stale-tab recovery. Refresh never cancels a running operation. */
+  async refreshSources() {
+    const notebookId = this.state.activeNotebook?.id;
+    if (!notebookId || this.state.busy) return;
+    const job = this.jobId;
+    const revision = this.state.activeNotebook!.revision;
+    const current = () => this.jobId === job && !this.state.busy && this.state.activeNotebook?.id === notebookId;
+    try {
+      await this.refresh(notebookId, current);
+      if (current()) {
+        const staleCapacityError = ['runtime.sourceLimit', 'runtime.crossTabSourcesChanged', 'runtime.storageConflict'].includes(this.state.errorMessage?.key ?? '');
+        this.publish({ ...(this.state.activeNotebook?.revision !== revision ? { searchHits: [] } : {}), ...(staleCapacityError ? { error: null } : {}) });
+      }
+    }
+    catch (error) { if (current()) this.report(error); }
+  }
+  private updateImport(batchId: number, notebookId: string, update: (batch: ImportBatch) => ImportBatch) {
+    const batch = this.state.importBatch;
+    if (batch?.id !== batchId || batch.notebookId !== notebookId || this.state.activeNotebook?.id !== notebookId) return;
+    this.publish({ importBatch: update(batch) });
+  }
   async importFiles(files: File[]) {
     const notebook = this.state.activeNotebook;
-    if (!notebook || !files.length) return;
+    if (!notebook || !files.length || this.state.busy) return;
+    const batchId = ++this.importBatchId;
+    this.publish({ importBatch: { id: batchId, notebookId: notebook.id, remainingAtStart: Math.max(0, LIMITS.sources - this.state.sources.length),
+      status: 'running', files: files.map(file => ({ name: file.name, status: 'pending' })) } });
+    const fileStatus = (index: number, status: ImportFileOutcome['status'], errorMessage?: MessageDescriptor) => this.updateImport(batchId, notebook.id, batch => ({ ...batch,
+      files: batch.files.map((file, i) => i === index ? { name: file.name, status, ...(errorMessage ? { errorMessage } : {}) } : file) }));
+    const stop = (status: ImportBatch['status']) => this.updateImport(batchId, notebook.id, batch => ({ ...batch, status,
+      files: batch.files.map(file => file.status === 'pending' ? { ...file, status: 'not-attempted' } : file) }));
     await this.job(async (signal, id, progress) => {
       for (let index = 0; index < files.length; index++) {
         const file = files[index];
-        this.assertCurrent(id, notebook.id);
-        if (file.size > LIMITS.fileBytes) throw localizedError('runtime.fileTooLarge', { filename: displaySourceName(file.name) });
-        if (!file.size) throw localizedError('runtime.emptyFile', { filename: displaySourceName(file.name) });
-        const extension = file.name.split('.').at(-1)?.toLowerCase();
-        if (!['pdf', 'md', 'txt'].includes(extension ?? '')) throw new Error('Bitte verwende PDF-, Markdown- oder TXT-Dateien.');
-        if (this.state.sources.length >= LIMITS.sources) throw new Error('Das Notebook enthält bereits zehn Quellen.');
-        const sourceId = crypto.randomUUID();
-        const revision = this.state.activeNotebook!.revision;
-        const existingChunks = await this.storage.chunks(notebook.id);
-        const existingCharacters = this.state.sources.reduce((n, s) => n + s.pages.reduce((sum, p) => sum + Array.from(p.text).length, 0), 0);
-        const result = await this.pipeline.index({
-          bytes: await file.arrayBuffer(), kind: extension as SourceKind, notebookId: notebook.id, sourceId,
-          remainingChunks: LIMITS.chunks - existingChunks.length, remainingCharacters: LIMITS.characters - existingCharacters
-        }, signal, value => progress({ ...value, detail: `${displaySourceName(file.name)} · Datei ${index + 1} / ${files.length}`, detailMessage: message('runtime.fileProgress', { filename: displaySourceName(file.name), current: index + 1, total: files.length }) }));
-        this.assertCurrent(id, notebook.id, revision);
-        if (result.chunks.some(chunk => chunk.embeddingVersion !== EMBEDDING_VERSION)) throw new Error('Die Modellversion des Index stimmt nicht überein.');
-        const source: Source = {
-          id: sourceId, notebookId: notebook.id, name: file.name, kind: extension as SourceKind, size: file.size,
-          createdAt: Date.now(), original: file, pages: result.pages, parser: result.parser, chunkCount: result.chunks.length
-        };
-        await this.storage.saveSource(source, result.chunks, revision, signal);
-        this.assertCurrent(id, notebook.id);
-        this.publish({ searchHits: [] });
-        await this.refresh();
+        let attempted = false;
+        try {
+          this.assertCurrent(id, notebook.id);
+          // Read persisted capacity before reading file bytes or invoking the indexer.
+          // Another tab may still win the commit race; saveSource checks it again atomically.
+          const capacity = await this.storage.sourceImportState(notebook.id);
+          this.assertCurrent(id, notebook.id);
+          if (capacity.sources >= LIMITS.sources) {
+            stop('capacity'); throw localizedError('runtime.sourceLimit', { limit: LIMITS.sources });
+          }
+          if (capacity.revision !== this.state.activeNotebook!.revision) throw localizedError('runtime.crossTabSourcesChanged');
+          attempted = true; fileStatus(index, 'importing');
+          if (file.size > LIMITS.fileBytes) throw localizedError('runtime.fileTooLarge', { filename: displaySourceName(file.name) });
+          if (!file.size) throw localizedError('runtime.emptyFile', { filename: displaySourceName(file.name) });
+          const extension = file.name.split('.').at(-1)?.toLowerCase();
+          if (!['pdf', 'md', 'txt'].includes(extension ?? '')) throw localizedError('runtime.fileKinds');
+          const sourceId = crypto.randomUUID();
+          const revision = capacity.revision!;
+          const existingChunks = await this.storage.chunks(notebook.id);
+          this.assertCurrent(id, notebook.id, revision);
+          const bytes = await file.arrayBuffer();
+          this.assertCurrent(id, notebook.id, revision);
+          const result = await this.pipeline.index({ bytes, kind: extension as SourceKind, notebookId: notebook.id, sourceId,
+            remainingChunks: LIMITS.chunks - existingChunks.length, remainingCharacters: LIMITS.characters - this.state.sources.reduce((sum, source) => sum + source.pages.reduce((n, page) => n + Array.from(page.text).length, 0), 0)
+          }, signal, value => progress({ ...value, detail: `${displaySourceName(file.name)} · Datei ${index + 1} / ${files.length}`, detailMessage: message('runtime.fileProgress', { filename: displaySourceName(file.name), current: index + 1, total: files.length }) }));
+          this.assertCurrent(id, notebook.id, revision);
+          if (result.chunks.some(chunk => chunk.embeddingVersion !== EMBEDDING_VERSION)) throw new Error('Die Modellversion des Index stimmt nicht überein.');
+          const source: Source = {
+            id: sourceId, notebookId: notebook.id, name: file.name, kind: extension as SourceKind, size: file.size,
+            createdAt: Date.now(), original: file, pages: result.pages, parser: result.parser, chunkCount: result.chunks.length
+          };
+          await this.storage.saveSource(source, result.chunks, revision, signal);
+          // saveSource resolves only after transaction commit. Cancellation afterward must
+          // not relabel that durable source as canceled or failed.
+          fileStatus(index, 'imported');
+          const current = () => this.state.importBatch?.id === batchId && this.state.activeNotebook?.id === notebook.id &&
+            (this.jobId === id || (this.jobId === id + 1 && !this.state.busy));
+          if (current()) {
+            this.publish({ searchHits: [] });
+            await this.refresh(notebook.id, current);
+          }
+          this.assertCurrent(id, notebook.id);
+        } catch (error) {
+          const canceled = signal.aborted || (error instanceof DOMException && error.name === 'AbortError');
+          const stored = this.state.importBatch?.id === batchId && this.state.importBatch.files[index]?.status === 'imported';
+          if (!stored && attempted) fileStatus(index, canceled ? 'canceled' : 'failed', canceled ? undefined : runtimeErrorDescriptor(error));
+          const capacity = this.state.importBatch?.id === batchId && this.state.importBatch.status === 'capacity';
+          stop(capacity ? 'capacity' : canceled ? 'canceled' : 'failed');
+          throw error;
+        }
       }
+      stop('complete');
     });
   }
   private matrix(chunks: StoredChunk[]) {
@@ -420,7 +479,7 @@ export class ResearchBenchController {
   async clearAll() {
     this.cancel(); this.viewRevision += 1; this.configRevision += 1;
     // Hide and release document/key state immediately, even when one storage backend is blocked.
-    this.publish({ notebooks: [], activeNotebook: null, sources: [], messages: [], artifacts: [], searchHits: [], hasKey: false, provider: 'mistral', error: null });
+    this.publish({ notebooks: [], activeNotebook: null, sources: [], messages: [], artifacts: [], searchHits: [], hasKey: false, provider: 'mistral', error: null, importBatch: null });
     const tasks: Array<{ label: string; message: MessageDescriptor; run: () => unknown }> = [
       { label: 'lokale Notebook-Daten', message: message('runtime.wipeNotebooks'), run: () => this.storage.clear() },
       { label: 'Mistral-Sitzungsschlüssel', message: message('runtime.wipeMistralKey'), run: () => sessionStorage.removeItem(`${KEY_PREFIX}mistral`) },

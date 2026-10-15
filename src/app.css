@@ -361,6 +361,19 @@ audio { color-scheme: inherit; max-width: 100%; }
 .notebook-empty p { font-size: 0.875rem; line-height: 1.7; color: var(--text-secondary); margin-bottom: 12px; }
 .sources-label { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 10px; flex-shrink: 0; }
 .count-badge { font-size: 0.75rem; padding: 3px 7px; border-radius: 5px; background: var(--surface-inset); color: var(--text-muted); }
+.source-capacity { padding: 0 18px 12px; flex-shrink: 0; }
+.source-capacity > p { font-size: 0.75rem; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
+.source-capacity-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 7px; }
+.source-capacity-actions > button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.import-report { flex: 0 0 auto; padding: 10px 18px; border-block: 1px solid var(--border-soft); background: var(--surface-subtle); font-size: 0.75rem; line-height: 1.5; overflow-wrap: anywhere; }
+.import-report strong { color: var(--text-secondary); }
+.import-report p { margin: 4px 0; color: var(--text-secondary); }
+.import-report .import-warning { color: var(--accent-text); }
+.import-report summary { cursor: pointer; min-height: 44px; padding-block: 10px; color: var(--accent-text); }
+.import-report ul { list-style: none; padding: 0; max-height: 180px; overflow-y: auto; }
+.import-report li { display: flex; flex-wrap: wrap; gap: 2px 8px; padding-block: 5px; border-top: 1px solid var(--border-soft); }
+.import-report li bdi { flex: 1 1 100%; }
+.import-report li small { flex-basis: 100%; }
 .source-list { flex: 1 1 0; min-height: 72px; padding: 0 8px; overflow-y: auto; }
 .source-row { display: flex; align-items: center; position: relative; border-radius: 8px; margin-bottom: 4px; }
 .source-row:hover, .source-row.selected { background: var(--surface-subtle); }

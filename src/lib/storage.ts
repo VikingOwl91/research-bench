@@ -1,6 +1,7 @@
 import { getLocale } from './i18n/store';
 import { translate, type MessageDescriptor } from './i18n/index';
 import { runtimeErrorDescriptor } from './i18n/runtime-errors';
+import { localizedError } from './i18n/message';
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction } from 'idb';
 import { EMBEDDING_VERSION, LIMITS } from './constants';
 import { applyPodcastSupportGate } from './support-gate';
@@ -112,6 +113,15 @@ export class BenchStorage {
     }
     return values;
   }
+  /** One read transaction provides an advisory preflight; saveSource remains authoritative. */
+  async sourceImportState(id: string) {
+    const tx = (await this.open()).transaction(['notebooks', 'sources'], 'readonly');
+    const [notebook, sources] = await Promise.all([
+      tx.objectStore('notebooks').get(id), tx.objectStore('sources').index('notebook').count(id)
+    ]);
+    await tx.done;
+    return { revision: notebook?.revision ?? null, sources };
+  }
   async saveSource(source: Source, chunks: StoredChunk[], revision: number, signal?: AbortSignal) {
     const db = await this.open();
     if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
@@ -122,8 +132,9 @@ export class BenchStorage {
     const count = await tx.objectStore('chunks').index('notebook').count(source.notebookId);
     const characters = [...existing, source].reduce((n, s) => n + s.pages.reduce((sum, p) => sum + Array.from(p.text).length, 0), 0);
     if (!notebook || notebook.revision !== revision) { tx.abort(); throw new StorageConflict(); }
-    if (existing.length >= LIMITS.sources || count + chunks.length > LIMITS.chunks || characters > LIMITS.characters) {
-      tx.abort(); throw new Error('Das Notebook-Limit ist erreicht (10 Quellen, 500.000 Zeichen oder 1.000 Chunks). Bitte verwende ein weiteres Notebook.');
+    if (existing.length >= LIMITS.sources) { tx.abort(); throw localizedError('runtime.sourceLimit', { limit: LIMITS.sources }); }
+    if (count + chunks.length > LIMITS.chunks || characters > LIMITS.characters) {
+      tx.abort(); throw localizedError('runtime.storageNotebookLimit', { sources: LIMITS.sources });
     }
     if (!chunks.length || chunks.some(c => c.sourceId !== source.id || c.notebookId !== source.notebookId || c.vector.length !== 384 || !c.vector.every(Number.isFinite))) {
       tx.abort(); throw new Error('Der lokale Index ist unvollständig; die Quelle wurde nicht gespeichert.');

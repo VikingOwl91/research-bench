@@ -312,7 +312,7 @@ documents, purpose, contracts and provider configuration.
 ## Limits and deliberate trade-offs
 
 - Text-based PDF, UTF-8 Markdown and TXT; scanned/image-only PDFs need OCR and are rejected.
-- 10 MiB/file, ten sources, 500,000 canonical characters and 1,000 chunks/notebook.
+- 10 MiB/file, 50 sources, 500,000 canonical characters and 1,000 chunks/notebook.
   Character limits count **extracted** text: PDF extraction covers text within the
   page bounds (invisible and white text are extracted; graphic-only pages are not),
   so a PDF's extracted text can be smaller than its visible content, and pages
