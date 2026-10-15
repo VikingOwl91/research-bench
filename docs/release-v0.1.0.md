@@ -1,6 +1,7 @@
 # v0.1.0 candidate and release checklist
 
 Status: **local preparation, not a published release**. The feature set is frozen.
+See the [cleanup inventory, disclosure review and local evidence](v0.1.0-preparation.md).
 Starting baseline: `8836b098984656ef64cac13ddd228e2766f0b6bd`.
 Historical tags and signed commits remain intact. The repository stays private.
 
