@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.0 — candidate (unreleased)
+
+- Store up to 50 sources per notebook with localized capacity and batch-import feedback;
+  existing per-file, extracted-text, chunk and generation-context limits remain.
+- Preserve atomic capacity enforcement across tabs and fence overlapping source refreshes.
+- Add bounded source-instruction filtering and numeric/quotation support heuristics,
+  including resumed podcast scripts before speech. These do not verify semantic support.
+- Improve PDF rendering-property provenance, bounded source-viewer segmentation,
+  progress-aware indexing timeouts and Firefox audio/cache regression coverage.
+- Pin CI actions, extend timeout headroom and reconcile public setup, privacy, security,
+  licensing and source-rebuild documentation. Include the existing axe-core notices.
+
+Prototype limitations remain: unsupported claims can survive and supported wording can
+be removed; PDF visibility/extraction is incomplete; browser storage/performance varies.
+Not all stored sources participate in every generated answer. The internal storage API
+byte-limit hardening gap is documented. No production-security, accessibility-conformance
+or cross-toolchain binary-reproducibility certification is claimed.
+
+This entry describes a local release candidate, not a published tag or deployment.
+
 ## 0.0.4 — 2026-10-14
 
 - System, Light and Dark appearance with persisted preferences and switching without reload.
