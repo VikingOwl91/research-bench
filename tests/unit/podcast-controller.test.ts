@@ -164,7 +164,9 @@ describe('BYOK changes invalidate every asynchronous podcast stage', () => {
       if (change === 'provider') controller.setProvider('openrouter'); else controller.setKey(change === 'remove' ? '' : 'new-dummy-key');
       expect(signal.aborted).toBe(true); expect(cancelAudio).toHaveBeenCalled();
       gate.resolve(); await running;
-      expect(synthesizeTurn).toHaveBeenCalledTimes(before); expect(state.busy).toBe(false); expect(state.error).toBeNull();
+      expect(synthesizeTurn).toHaveBeenCalledTimes(before); expect(state.busy).toBe(false);
+      // RB-RT-009: key/provider changes discard the in-flight podcast with a visible notice.
+      expect(state.errorMessage?.key).toBe('runtime.staleAbort');
       const artifacts = (await storage.loadNotebook(state.activeNotebook!.id)).artifacts;
       expect(artifacts.some(a => a.kind === 'podcast' && a.status === 'ready')).toBe(false);
       for (const a of artifacts) if (a.kind === 'podcast') expect(await storage.loadPodcastSegments(a.id)).toHaveLength(stage === 'render' || stage === 'finalize' ? 4 : 0);

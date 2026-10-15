@@ -93,9 +93,13 @@ export class ResearchBenchController {
     this.rememberSelection();
   }
   async createNotebook(name: string) {
+    const wasBusy = this.state.busy;
     this.cancel();
-    try { const notebook = await this.storage.createNotebook(name); await this.selectNotebook(notebook.id); }
-    catch (error) { this.report(error); }
+    try {
+      const notebook = await this.storage.createNotebook(name);
+      await this.selectNotebook(notebook.id);
+      if (wasBusy) this.notifyDiscarded();
+    } catch (error) { this.report(error); }
   }
   async renameNotebook(name: string) {
     const id = this.state.activeNotebook?.id;
@@ -103,9 +107,11 @@ export class ResearchBenchController {
     try { await this.storage.renameNotebook(id, name); await this.refresh(); } catch (error) { this.report(error); }
   }
   async selectNotebook(id: string) {
+    const wasBusy = this.state.busy;
     this.cancel();
     this.viewRevision += 1;
     this.publish({ searchHits: [], error: null });
+    if (wasBusy) this.notifyDiscarded();
     try { await this.refresh(id); } catch (error) { this.report(error); }
   }
   async deleteNotebook(id: string) {
@@ -121,19 +127,24 @@ export class ResearchBenchController {
   async deleteSource(id: string) {
     const notebookId = this.state.activeNotebook?.id;
     if (!notebookId) return;
+    const wasBusy = this.state.busy;
     this.cancel();
+    if (wasBusy) this.notifyDiscarded();
     try { await this.storage.deleteSource(id, notebookId); this.publish({ searchHits: [] }); await this.refresh(); }
     catch (error) { this.report(error); }
   }
   setProvider(provider: Provider) {
     if (provider === this.state.provider) return;
+    const wasBusy = this.state.busy;
     this.cancel(); this.configRevision += 1;
     try {
       sessionStorage.setItem(PROVIDER_KEY, provider);
       this.publish({ provider, hasKey: !!this.getKey(provider), error: null });
     } catch (error) { this.report(error); }
+    if (wasBusy) this.notifyDiscarded();
   }
   setKey(key: string) {
+    const wasBusy = this.state.busy;
     this.cancel(); this.configRevision += 1;
     try {
       const trimmed = key.trim();
@@ -142,6 +153,7 @@ export class ResearchBenchController {
       else sessionStorage.removeItem(`${KEY_PREFIX}${this.state.provider}`);
       this.publish({ hasKey: !!trimmed, error: null });
     } catch (error) { this.report(error); }
+    if (wasBusy) this.notifyDiscarded();
   }
   cancel() {
     this.jobId += 1;
@@ -151,9 +163,19 @@ export class ResearchBenchController {
     this.publish({ busy: false, progress: null });
   }
   clearError() { this.publish({ error: null }); }
+  /** Tell the user when an in-flight job was discarded because the inputs changed. */
+  private notifyDiscarded() {
+    if (this.state.error) return; // A real error from the action itself takes precedence.
+    this.publish({ error: translate(getLocale(), 'runtime.staleAbort'), errorMessage: message('runtime.staleAbort') });
+  }
   private assertCurrent(id: number, notebookId: string, revision?: number, config?: number) {
-    if (this.jobId !== id || this.state.activeNotebook?.id !== notebookId || (revision !== undefined && this.state.activeNotebook.revision !== revision) || (config !== undefined && this.configRevision !== config)) {
+    if (this.jobId !== id || this.state.activeNotebook?.id !== notebookId) {
       throw new DOMException('Abgebrochen', 'AbortError');
+    }
+    // The job is still current, but the sources or configuration changed (for
+    // example from another tab): report it instead of dropping the result silently.
+    if ((revision !== undefined && this.state.activeNotebook!.revision !== revision) || (config !== undefined && this.configRevision !== config)) {
+      throw localizedError('runtime.staleAbort');
     }
   }
   private async job(action: (signal: AbortSignal, id: number, progress: (value: Progress) => void) => Promise<void>) {
