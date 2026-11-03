@@ -33,7 +33,7 @@
     "idb": "8.0.4",
     "lucide-svelte": "1.0.1",
     "svelte": "5.57.2",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
